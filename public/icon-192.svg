@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
+  <defs>
+    <linearGradient id="bg192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1a4d2e"/>
+      <stop offset="100%" stop-color="#0f3320"/>
+    </linearGradient>
+    <linearGradient id="canopy192" x1="20%" y1="0%" x2="80%" y2="100%">
+      <stop offset="0%" stop-color="#4ade80"/>
+      <stop offset="100%" stop-color="#22c55e"/>
+    </linearGradient>
+    <linearGradient id="bench192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#86efac"/>
+      <stop offset="100%" stop-color="#4ade80"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="192" height="192" rx="40" fill="url(#bg192)"/>
+  <!-- Tree trunk -->
+  <rect x="68" y="96" width="12" height="44" rx="6" fill="#92400e" opacity="0.85"/>
+  <!-- Tree canopy — layered circles for depth -->
+  <ellipse cx="82" cy="80" rx="34" ry="30" fill="url(#canopy192)" opacity="0.6"/>
+  <ellipse cx="74" cy="68" rx="28" ry="26" fill="url(#canopy192)" opacity="0.8"/>
+  <ellipse cx="82" cy="60" rx="22" ry="22" fill="url(#canopy192)"/>
+  <!-- Bench seat -->
+  <rect x="94" y="110" width="54" height="9" rx="4.5" fill="url(#bench192)"/>
+  <!-- Bench backrest -->
+  <rect x="94" y="98" width="54" height="7" rx="3.5" fill="url(#bench192)" opacity="0.8"/>
+  <!-- Bench legs -->
+  <rect x="100" y="119" width="7" height="18" rx="3.5" fill="url(#bench192)" opacity="0.9"/>
+  <rect x="134" y="119" width="7" height="18" rx="3.5" fill="url(#bench192)" opacity="0.9"/>
+  <!-- Ground line -->
+  <ellipse cx="114" cy="138" rx="40" ry="4" fill="#22c55e" opacity="0.25"/>
+</svg>

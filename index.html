@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no" />
+
+    <title>Find Your Bench</title>
+    <meta name="description" content="Discover, rate, and share your favorite benches in the wild. The community-powered bench map." />
+    <meta name="application-name" content="Find Your Bench" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <link rel="canonical" href="https://findyourbench.app" />
+
+    <!-- PWA manifest -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <!-- Theme -->
+    <meta name="theme-color" content="#15803d" />
+
+    <!-- iOS PWA -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FYB" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.svg" />
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="/icon-192.svg" />
+
+    <!-- OG -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://findyourbench.app" />
+    <meta property="og:title" content="Find Your Bench" />
+    <meta property="og:description" content="Discover, rate, and share your favorite benches in the wild. The community-powered bench map." />
+    <meta property="og:image" content="https://findyourbench.app/icon-512.svg" />
+    <meta property="og:site_name" content="Find Your Bench" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@findyourbench" />
+    <meta name="twitter:title" content="Find Your Bench" />
+    <meta name="twitter:description" content="Discover, rate, and share your favorite benches in the wild." />
+    <meta name="twitter:image" content="https://findyourbench.app/icon-512.svg" />
+
+    <!-- iOS splash screens (portrait) -->
+    <meta name="apple-touch-startup-image" href="/apple-touch-icon.svg" />
+
+    <style>
+      #splash {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        background: linear-gradient(160deg, #f0fdf4 0%, #dcfce7 50%, #ecfdf5 100%);
+        z-index: 9999;
+        transition: opacity 0.45s ease, visibility 0.45s ease;
+      }
+      #splash.hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+      #splash img {
+        width: 112px;
+        height: 112px;
+        object-fit: contain;
+        margin-bottom: 20px;
+        animation: splash-pulse 2s ease-in-out infinite;
+      }
+      #splash h1 {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        color: #14532d;
+        letter-spacing: -0.01em;
+        margin: 0 0 6px;
+      }
+      #splash p {
+        font-family: system-ui, -apple-system, sans-serif;
+        font-size: 12px;
+        color: #4b7c5c;
+        margin: 0;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        font-weight: 500;
+      }
+      #splash .loader {
+        margin-top: 36px;
+        width: 32px;
+        height: 32px;
+        border: 2.5px solid rgba(21,128,61,0.15);
+        border-top-color: #15803d;
+        border-radius: 50%;
+        animation: spin 0.75s linear infinite;
+      }
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+      @keyframes splash-pulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.04); opacity: 0.88; }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="splash" aria-hidden="true">
+      <img src="/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png" alt="Find Your Bench" />
+      <h1>Find Your Bench</h1>
+      <p>Get Outside. Stay Outside.</p>
+      <div class="loader"></div>
+    </div>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
