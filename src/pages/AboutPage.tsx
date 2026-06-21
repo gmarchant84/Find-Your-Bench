@@ -48,17 +48,31 @@ export default function AboutPage() {
           </p>
         </div>
 
-        {/* What is FYB */}
+        {/* Mission */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-4">
             <Compass className="w-5 h-5 text-green-600" />
-            <h3 className="font-bold text-gray-900">What is Find Your Bench?</h3>
+            <h3 className="font-bold text-gray-900">Our Mission</h3>
           </div>
-          <p className="text-gray-600 text-sm leading-relaxed mb-3">
-            A map-based community for people who believe the best moments happen when you slow down, sit down, and look around.
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            We're building the world's largest database of public benches — not because benches are interesting objects, but because the moments that happen on them are.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            A bench dedicated to someone's grandmother. A worn wooden seat at the top of a trail where strangers become friends. A quiet corner of a park that regulars have claimed as their own for thirty years. These places exist everywhere — most of them undiscovered, unrecorded, unknown to anyone who wasn't already there.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed">
-            Every bench has a story. A memorial bench for someone's grandmother. A hidden clifftop seat with a view no one talks about. A park bench where regulars gather every morning. FYB is building the world's largest database of these places — one sit at a time.
+            Find Your Bench is a community of people who slow down, look around, and share what they find. Every bench added is an invitation for someone else to sit there too.
+          </p>
+        </div>
+
+        {/* Why benches */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+          <h3 className="font-bold text-gray-900 mb-4">Why benches?</h3>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            Public benches are one of the last truly free things. No ticket, no membership, no reservation. Just a seat in the world, open to anyone who needs a moment.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            They mark the places communities care about — outside the bakery that's been there since 1952, at the overlook where the whole city opens up, beside the tree someone planted in memory of a child. Cataloging them is a way of saying: this place matters. Someone sat here and thought it was worth remembering.
           </p>
         </div>
 
