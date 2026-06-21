@@ -55,13 +55,16 @@ export default function AboutPage() {
             <h3 className="font-bold text-gray-900">Our Mission</h3>
           </div>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            We're building the world's largest database of public benches — not because benches are interesting objects, but because the moments that happen on them are.
+            Find Your Bench started with a dog, a bagel, and nowhere to sit.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            A bench dedicated to someone's grandmother. A worn wooden seat at the top of a trail where strangers become friends. A quiet corner of a park that regulars have claimed as their own for thirty years. These places exist everywhere — most of them undiscovered, unrecorded, unknown to anyone who wasn't already there.
+            The idea was simple: grab a coffee or a sandwich, wander around the neighborhood with the dog, and find a good bench to settle into for a bit. Sometimes a quick bite, sometimes a long stay. The problem was there was no way to know where the good benches were — or if there was even one around the next corner. You just had to wander and hope.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            That feeling turned into something bigger. Exploring a new neighborhood, traveling to a new city, going on vacation — benches became a reason to slow down and actually look at a place. Finding a great one started to feel like a small victory. And once you start noticing benches, you notice them everywhere.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed">
-            Find Your Bench is a community of people who slow down, look around, and share what they find. Every bench added is an invitation for someone else to sit there too.
+            We're building the world's largest database of public benches so that anyone — dog walker, tourist, coffee in hand — can find a place to sit, anywhere they happen to be. Every bench added is an invitation for someone else to sit there too.
           </p>
         </div>
 
