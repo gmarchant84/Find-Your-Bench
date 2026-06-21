@@ -61,6 +61,29 @@ function buildHtml(opts: {
 </html>`;
 }
 
+function isCrawler(req: Request): boolean {
+  const ua = (req.headers.get("user-agent") ?? "").toLowerCase();
+  return (
+    ua.includes("facebookexternalhit") ||
+    ua.includes("twitterbot") ||
+    ua.includes("linkedinbot") ||
+    ua.includes("whatsapp") ||
+    ua.includes("telegrambot") ||
+    ua.includes("slackbot") ||
+    ua.includes("discordbot") ||
+    ua.includes("applebot") ||
+    ua.includes("googlebot") ||
+    ua.includes("bingbot") ||
+    ua.includes("imessage") ||
+    ua.includes("iMessage") ||
+    // iMessage link preview uses this
+    ua.includes("dataaccessd") ||
+    ua.includes("imessage") ||
+    ua.includes("messages/") ||
+    ua.includes("preview")
+  );
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -71,6 +94,13 @@ Deno.serve(async (req: Request) => {
     const id = url.searchParams.get("id");
 
     if (!id) {
+      // Non-crawlers just go to the app
+      if (!isCrawler(req)) {
+        return new Response(null, {
+          status: 302,
+          headers: { ...corsHeaders, Location: APP_URL },
+        });
+      }
       return new Response(
         buildHtml({
           url: APP_URL,
@@ -94,6 +124,13 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!bench) {
+      // No bench found — send users to app, crawlers get a 404 page
+      if (!isCrawler(req)) {
+        return new Response(null, {
+          status: 302,
+          headers: { ...corsHeaders, Location: APP_URL },
+        });
+      }
       return new Response(
         buildHtml({
           url: APP_URL,
@@ -106,15 +143,23 @@ Deno.serve(async (req: Request) => {
     }
 
     const benchUrl = `${APP_URL}/bench/${bench.id}`;
-    const title = `${bench.name} | ${SITE_NAME}`;
 
+    // Real users get a direct 302 to the bench page — no HTML needed
+    if (!isCrawler(req)) {
+      return new Response(null, {
+        status: 302,
+        headers: { ...corsHeaders, Location: benchUrl },
+      });
+    }
+
+    // Crawlers get the full OG HTML
+    const title = `${bench.name} | ${SITE_NAME}`;
     const description = bench.description
       ? bench.description.length > 120
         ? bench.description.slice(0, 117) + "…"
         : bench.description
       : `Discover this bench on ${SITE_NAME}.`;
 
-    // Try bench_photos table first (more reliable than legacy photos array)
     let image = DEFAULT_OG_IMAGE;
     const { data: primaryPhoto } = await supabase
       .from("bench_photos")
