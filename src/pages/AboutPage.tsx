@@ -55,7 +55,7 @@ export default function AboutPage() {
             <h3 className="font-bold text-gray-900">Our Mission</h3>
           </div>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            This whole thing started because of a dog and a bagel.
+            Find Your Bench started with a dog, a bagel, and nowhere to sit.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
             The routine was simple. Grab a coffee or a sandwich, head out with Maisel (a Bernedoodle with very strong opinions about which way to go), and find somewhere good to sit down for a bit. Quick bite or long stay, didn't matter. The problem was you never really knew if a bench was around the next corner or twenty minutes away. You just wandered and hoped.
