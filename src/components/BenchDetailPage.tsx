@@ -528,7 +528,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
               <img
                 src={primaryPhotoUrl}
                 alt={bench.name}
-                className={`w-full h-full object-cover object-center transition-opacity duration-300 ${primaryPhotoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                className={`w-full h-full object-cover object-bottom transition-opacity duration-300 ${primaryPhotoLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setPrimaryPhotoLoaded(true)}
                 onError={() => setPrimaryPhotoUrl(null)}
               />
