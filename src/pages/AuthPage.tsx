@@ -35,7 +35,13 @@ export default function AuthPage() {
       }
       navigate('/');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const msg =
+        err instanceof Error ? err.message
+        : typeof err === 'object' && err !== null && 'message' in err && typeof (err as any).message === 'string' ? (err as any).message
+        : 'Sign in failed. Please check your email and password.';
+      // Never show raw objects or generic Supabase internals
+      const isGeneric = !msg || msg === '{}' || msg.includes('fetch') || msg.length > 200;
+      setError(isGeneric ? 'Sign in failed. Please check your email and password.' : msg);
     } finally {
       setLoading(false);
     }
