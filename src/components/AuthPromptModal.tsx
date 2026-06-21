@@ -33,7 +33,7 @@ export default function AuthPromptModal({ onSignUp, onLogIn, onClose, action }: 
           </button>
           <div className="flex items-center gap-3 mb-1">
             <img
-              src="/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png"
+              src="/fyb-logo.png"
               alt="Find Your Bench"
               className="w-10 h-10 rounded-xl object-contain"
             />
