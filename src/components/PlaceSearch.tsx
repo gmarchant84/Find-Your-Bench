@@ -6,6 +6,7 @@ import { supabase, BENCH_VIBES, getVibe } from '../lib/supabase';
 interface PlaceSearchProps {
   onPlaceSelect: (lat: number, lng: number, placeName: string) => void;
   onClose: () => void;
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 interface BenchResult {
@@ -30,7 +31,7 @@ type ResultSection =
 
 const DEBOUNCE_MS = 280;
 
-export default function PlaceSearch({ onPlaceSelect, onClose }: PlaceSearchProps) {
+export default function PlaceSearch({ onPlaceSelect, onClose, userLocation }: PlaceSearchProps) {
   const [query, setQuery] = useState('');
   const [sections, setSections] = useState<ResultSection[]>([]);
   const [loading, setLoading] = useState(false);
@@ -77,9 +78,21 @@ export default function PlaceSearch({ onPlaceSelect, onClose }: PlaceSearchProps
       // ── Google Places autocomplete ──────────────────────────────────────
       new Promise<PlacePrediction[]>((resolve) => {
         if (!autocompleteService.current) { resolve([]); return; }
-        // Use 'geocode' only — mixing types causes zero results in Places API
+
+        // Build location bias from user's current position so neighborhood
+        // names like "Ocean Beach" rank results near them first.
+        const locationBias: google.maps.places.AutocompletionRequest = {
+          input: value,
+          ...(userLocation
+            ? {
+                location: new google.maps.LatLng(userLocation.lat, userLocation.lng),
+                radius: 50000, // 50 km bias radius
+              }
+            : {}),
+        };
+
         autocompleteService.current.getPlacePredictions(
-          { input: value, types: ['geocode'] },
+          locationBias,
           (results, status) => {
             if (status === google.maps.places.PlacesServiceStatus.OK && results) {
               resolve(
@@ -90,25 +103,7 @@ export default function PlaceSearch({ onPlaceSelect, onClose }: PlaceSearchProps
                 }))
               );
             } else {
-              // Fallback: also try establishment types separately
-              const svc = autocompleteService.current;
-              if (!svc) { resolve([]); return; }
-              svc.getPlacePredictions(
-                { input: value },
-                (r2, s2) => {
-                  if (s2 === google.maps.places.PlacesServiceStatus.OK && r2) {
-                    resolve(
-                      r2.slice(0, 5).map((r) => ({
-                        placeId: r.place_id,
-                        mainText: r.structured_formatting.main_text,
-                        secondaryText: r.structured_formatting.secondary_text,
-                      }))
-                    );
-                  } else {
-                    resolve([]);
-                  }
-                }
-              );
+              resolve([]);
             }
           }
         );

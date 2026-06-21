@@ -80,6 +80,7 @@ export default function BenchMap() {
   const [, setLocationError] = useState<string | null>(null);
   const [addBenchLocation, setAddBenchLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [showPlaceSearch, setShowPlaceSearch] = useState(false);
+  const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('miles');
   const [isNewUser, setIsNewUser] = useState(true);
   const [showNearbyMessage, setShowNearbyMessage] = useState(false);
@@ -330,14 +331,14 @@ export default function BenchMap() {
 
   const handleShowNearby = () => {
     if (userLocation) {
+      // Switch to list view sorted by distance
+      setViewMode('list');
       setMapCenter(userLocation);
       setMapZoom(15);
-      setShowNearbyMessage(true);
-      setTimeout(() => setShowNearbyMessage(false), 5000);
     } else {
+      // Request location, then switch to list once we have it
       getUserLocation();
-      setShowNearbyMessage(true);
-      setTimeout(() => setShowNearbyMessage(false), 5000);
+      setViewMode('list');
     }
   };
 
@@ -384,7 +385,12 @@ export default function BenchMap() {
     setShowPlaceSearch(false);
     setMapCenter({ lat, lng });
     setMapZoom(15);
-    if (viewMode !== 'map') setViewMode('map');
+    // Recalculate distances from the searched location so list sorts by proximity to it
+    setSearchCenter({ lat, lng });
+    setBenches(prev => prev.map(bench => ({
+      ...bench,
+      distance: calcDistance(lat, lng, Number(bench.latitude), Number(bench.longitude)),
+    })));
   };
 
   const handleGoHome = () => {
@@ -393,7 +399,14 @@ export default function BenchMap() {
     setViewMode('map');
     setSelectedCategory('all');
     setShowFilters(false);
-    // Pan back to user location only if explicitly going home, not on bench close
+    setSearchCenter(null);
+    // Restore distances from user location when clearing search
+    if (userLocation) {
+      setBenches(prev => prev.map(bench => ({
+        ...bench,
+        distance: calcDistance(userLocation.lat, userLocation.lng, Number(bench.latitude), Number(bench.longitude)),
+      })));
+    }
     setMapCenter(userLocation);
     setMapZoom(13);
   };
@@ -574,7 +587,15 @@ export default function BenchMap() {
                 </h2>
                 <p className="text-gray-600 text-sm">
                   {filteredBenches.length} bench{filteredBenches.length !== 1 ? 'es' : ''} found
-                  {userLocation && filteredBenches.some(b => b.distance) && ' · sorted by distance'}
+                  {filteredBenches.some(b => b.distance !== undefined) && (
+                    searchCenter && !userLocation
+                      ? ' · sorted by distance'
+                      : searchCenter
+                        ? ' · sorted by distance from search'
+                        : userLocation
+                          ? ' · sorted by distance'
+                          : ''
+                  )}
                 </p>
               </div>
               <BenchList
@@ -642,6 +663,7 @@ export default function BenchMap() {
         <PlaceSearch
           onPlaceSelect={handlePlaceSelect}
           onClose={() => setShowPlaceSearch(false)}
+          userLocation={userLocation}
         />
       )}
     </div>
