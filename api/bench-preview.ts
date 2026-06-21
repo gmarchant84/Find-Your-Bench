@@ -1,5 +1,3 @@
-import type { NextRequest } from "next/server";
-
 export const config = { runtime: "edge" };
 
 const CRAWLER_UA =
@@ -8,9 +6,11 @@ const CRAWLER_UA =
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL!;
 const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY!;
 
-export default async function handler(req: NextRequest) {
+export default async function handler(req: Request) {
+  const url = new URL(req.url);
+
   // Extract bench id from the path /bench/:id
-  const match = req.nextUrl.pathname.match(/^\/bench\/([0-9a-f-]{36})$/i);
+  const match = url.pathname.match(/^\/bench\/([0-9a-f-]{36})$/i);
   if (!match) {
     return new Response(null, { status: 302, headers: { Location: "/" } });
   }
@@ -20,7 +20,7 @@ export default async function handler(req: NextRequest) {
 
   // Regular browsers: let the SPA handle it (serve index.html)
   if (!CRAWLER_UA.test(ua)) {
-    const spaResponse = await fetch(new URL("/index.html", req.nextUrl.origin));
+    const spaResponse = await fetch(new URL("/index.html", url.origin));
     return new Response(spaResponse.body, {
       status: 200,
       headers: { "content-type": "text/html; charset=utf-8" },
