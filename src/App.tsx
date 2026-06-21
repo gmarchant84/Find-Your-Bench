@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
 import AuthPage from './pages/AuthPage';
 import BenchMap from './pages/BenchMap';
 import BenchPage from './pages/BenchPage';
@@ -74,11 +75,13 @@ interface AppProps {
 
 function App({ onReady }: AppProps) {
   return (
-    <BrowserRouter>
-      <AuthProvider>
-        <AppContent onReady={onReady ?? (() => {})} />
-      </AuthProvider>
-    </BrowserRouter>
+    <ErrorBoundary>
+      <BrowserRouter>
+        <AuthProvider>
+          <AppContent onReady={onReady ?? (() => {})} />
+        </AuthProvider>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 }
 

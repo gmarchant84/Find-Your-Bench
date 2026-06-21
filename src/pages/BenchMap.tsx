@@ -562,7 +562,7 @@ export default function BenchMap() {
               </div>
             )}
             {/* Map is always mounted so camera state is never lost when opening a bench */}
-            <div className={`${isNewUser || showNearbyMessage ? 'h-[calc(100dvh-460px)]' : 'h-[calc(100dvh-360px)]'} min-h-[300px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+            <div className={`${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
               <BenchMapComponent
                 onBenchClick={(bench) => {
                   lastBenchClickTime.current = Date.now();
@@ -650,7 +650,7 @@ export default function BenchMap() {
 
       {showLeaderboard && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-end sm:items-center justify-center">
-          <div className="w-full max-w-lg max-h-[90dvh] overflow-y-auto relative rounded-t-2xl sm:rounded-2xl">
+          <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto relative rounded-t-2xl sm:rounded-2xl">
             <button
               onClick={() => setShowLeaderboard(false)}
               className="absolute top-4 right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100"

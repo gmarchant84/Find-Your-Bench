@@ -185,7 +185,7 @@ export default function SaveToListModal({ benchId, benchName, onClose }: SaveToL
 
       {/* Sheet */}
       <div
-        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl sm:mb-6 shadow-2xl flex flex-col max-h-[88dvh] overflow-hidden animate-slide-up"
+        className="relative w-full sm:max-w-lg bg-white rounded-t-2xl sm:rounded-2xl sm:mb-6 shadow-2xl flex flex-col max-h-[88vh] overflow-hidden animate-slide-up"
         onClick={e => e.stopPropagation()}
       >
         {/* Drag handle */}
