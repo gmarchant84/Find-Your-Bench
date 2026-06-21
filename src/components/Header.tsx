@@ -9,6 +9,7 @@ interface HeaderProps {
   showProfile: boolean;
   userLocation: { lat: number; lng: number } | null;
   selectedCategory: string;
+  selectedLocationType: string;
   isLoggedIn: boolean;
   onViewModeChange: (mode: 'map' | 'list') => void;
   onShowLeaderboard: () => void;
@@ -18,7 +19,9 @@ interface HeaderProps {
   onShowNearby: () => void;
   onAddBench: () => void;
   onCategoryChange: (category: string) => void;
+  onLocationTypeChange: (locType: string) => void;
   onGoHome: () => void;
+  onShowAbout?: () => void;
 }
 
 export default function Header({
