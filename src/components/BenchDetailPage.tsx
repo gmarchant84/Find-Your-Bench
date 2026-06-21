@@ -265,6 +265,8 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   const [photoGalleryKey, setPhotoGalleryKey] = useState(0);
+  const [primaryPhotoUrl, setPrimaryPhotoUrl] = useState<string | null>(null);
+  const [primaryPhotoLoaded, setPrimaryPhotoLoaded] = useState(false);
 
   const touchStartY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -275,6 +277,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
     fetchVisitedStatus();
     fetchBenchLists();
     reverseGeocode();
+    fetchPrimaryPhoto();
     if (bench.founding_user_id && !initialFounderUsername) {
       supabase.from('profiles').select('username, is_founding_bencher').eq('id', bench.founding_user_id).maybeSingle().then(({ data }) => {
         if (data) {
@@ -284,6 +287,28 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
       });
     }
   }, [bench.id]);
+
+  const fetchPrimaryPhoto = async () => {
+    const { data } = await supabase
+      .from('bench_photos')
+      .select('photo_url')
+      .eq('bench_id', bench.id)
+      .eq('is_primary', true)
+      .maybeSingle();
+    if (data?.photo_url) {
+      setPrimaryPhotoUrl(data.photo_url);
+    } else {
+      // Fallback: get first photo if no primary set
+      const { data: first } = await supabase
+        .from('bench_photos')
+        .select('photo_url')
+        .eq('bench_id', bench.id)
+        .order('uploaded_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (first?.photo_url) setPrimaryPhotoUrl(first.photo_url);
+    }
+  };
 
   const reverseGeocode = () => {
     if (typeof google === 'undefined' || !google.maps?.Geocoder) return;
@@ -473,12 +498,21 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
               Hidden from public — only visible to admins
             </div>
           )}
-          {bench.photos && bench.photos.length > 0 && (
+          {primaryPhotoUrl && (
             <div
               className="relative w-full h-56 sm:h-72 bg-gray-100 overflow-hidden cursor-zoom-in"
-              onClick={() => setLightboxPhoto(bench.photos![0])}
+              onClick={() => setLightboxPhoto(primaryPhotoUrl)}
             >
-              <img src={bench.photos[0]} alt={bench.name} className="w-full h-full object-cover object-center" />
+              <img
+                src={primaryPhotoUrl}
+                alt={bench.name}
+                className={`w-full h-full object-cover object-center transition-opacity duration-300 ${primaryPhotoLoaded ? 'opacity-100' : 'opacity-0'}`}
+                onLoad={() => setPrimaryPhotoLoaded(true)}
+                onError={() => setPrimaryPhotoUrl(null)}
+              />
+              {!primaryPhotoLoaded && (
+                <div className="absolute inset-0 bg-gray-100 animate-pulse" />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent pointer-events-none" />
             </div>
           )}
@@ -652,14 +686,19 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
             onClick={() => {
               const url = `${window.location.origin}/bench/${bench.id}`;
               if (navigator.share) {
-                navigator.share({ title: bench.name, url }).catch(() => {});
+                navigator.share({ title: bench.name, url }).catch(() => {
+                  // Fallback to clipboard if share fails
+                  navigator.clipboard.writeText(url).catch(() => {});
+                  setShareCopied(true);
+                  setTimeout(() => setShareCopied(false), 2500);
+                });
               } else {
                 navigator.clipboard.writeText(url).then(() => {
                   setShareCopied(true);
-                  setTimeout(() => setShareCopied(false), 2000);
+                  setTimeout(() => setShareCopied(false), 2500);
                 }).catch(() => {
                   setShareCopied(true);
-                  setTimeout(() => setShareCopied(false), 2000);
+                  setTimeout(() => setShareCopied(false), 2500);
                 });
               }
             }}

@@ -33,7 +33,7 @@ export function Leaderboard({ onBenchClick }: LeaderboardProps) {
         supabase.from('benches').select('founding_user_id'),
         supabase.from('bench_photos').select('user_id'),
         supabase.from('ratings').select('user_id'),
-        supabase.from('profiles').select('id, username, email, is_founding_bencher'),
+        supabase.from('profiles').select('id, username, is_founding_bencher'),
       ]);
 
       if (benchRes.error || profileRes.error) {
@@ -45,7 +45,7 @@ export function Leaderboard({ onBenchClick }: LeaderboardProps) {
       const profileMap = new Map<string, { displayName: string; isFoundingBencher: boolean }>();
       (profileRes.data ?? []).forEach(p => {
         profileMap.set(p.id, {
-          displayName: p.username || (p.email ? p.email.split('@')[0] : 'Anonymous'),
+          displayName: p.username || 'Bencher',
           isFoundingBencher: p.is_founding_bencher ?? false,
         });
       });
