@@ -55,7 +55,7 @@ export default function AboutPage() {
             <h3 className="font-bold text-gray-900">What is Find Your Bench?</h3>
           </div>
           <p className="text-gray-600 text-sm leading-relaxed mb-3">
-            Think of it as a blend of Pokémon GO's exploration and Google Maps' place discovery — but focused entirely on benches and the moments around them.
+            A map-based community for people who believe the best moments happen when you slow down, sit down, and look around.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed">
             Every bench has a story. A memorial bench for someone's grandmother. A hidden clifftop seat with a view no one talks about. A park bench where regulars gather every morning. FYB is building the world's largest database of these places — one sit at a time.
@@ -110,7 +110,7 @@ export default function AboutPage() {
 
         {/* Built by */}
         <div className="text-center text-gray-400 text-xs">
-          <p>Built with ❤️ in San Jose, CA</p>
+          <p>Built with ❤️ in San Francisco, CA</p>
           <p className="mt-1">© 2026 Find Your Bench</p>
         </div>
 
