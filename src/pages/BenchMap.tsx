@@ -11,7 +11,7 @@ import PlaceSearch from '../components/PlaceSearch';
 import Header from '../components/Header';
 import FloatingAddButton from '../components/FloatingAddButton';
 import AuthPromptModal from '../components/AuthPromptModal';
-import { MapPin, X, Plus, CheckCircle, AlertCircle } from 'lucide-react';
+import { MapPin, X, Plus, CheckCircle, AlertCircle, Navigation } from 'lucide-react';
 import { DistanceUnit, calculateDistance as calcDistance } from '../lib/distance';
 import { BenchOfTheDay } from '../components/BenchOfTheDay';
 
@@ -463,6 +463,7 @@ export default function BenchMap() {
         onAddBench={handleOpenAddModal}
         onCategoryChange={setSelectedCategory}
         onGoHome={handleGoHome}
+        onShowAbout={() => navigate('/about')}
       />
 
       <FloatingAddButton
@@ -511,13 +512,34 @@ export default function BenchMap() {
               />
             )}
             {isNewUser && (
-              <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
-                <h3 className="font-semibold text-blue-900 mb-2">How to add a bench:</h3>
-                <ul className="text-sm text-blue-700 space-y-1">
-                  <li>• Tap "Add Bench" then tap the map to drop a pin</li>
-                  <li>• Use "Search" to find a park or landmark</li>
-                  <li>• Use "Nearby" to view benches near your location</li>
-                </ul>
+              <div className="bg-white border-2 border-green-100 rounded-xl p-4 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-gray-900 text-sm">New to Find Your Bench?</h3>
+                  <button
+                    onClick={() => navigate('/about')}
+                    className="text-xs text-green-600 font-semibold hover:text-green-700 transition"
+                  >
+                    Learn more →
+                  </button>
+                </div>
+                <div className="flex gap-2">
+                  {userLocation && (
+                    <button
+                      onClick={handleShowNearby}
+                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition shadow-sm"
+                    >
+                      <Navigation className="w-4 h-4" />
+                      Benches Near Me
+                    </button>
+                  )}
+                  <button
+                    onClick={handleOpenAddModal}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add a Bench
+                  </button>
+                </div>
               </div>
             )}
             {/* Map is always mounted so camera state is never lost when opening a bench */}

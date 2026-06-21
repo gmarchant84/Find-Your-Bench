@@ -6,6 +6,8 @@ import BenchMap from './pages/BenchMap';
 import BenchPage from './pages/BenchPage';
 import AchievementNotification from './components/AchievementNotification';
 import LegalPage from './components/LegalPage';
+import AboutPage from './pages/AboutPage';
+import PWAInstallPrompt from './components/PWAInstallPrompt';
 
 interface AppContentProps {
   onReady: () => void;
@@ -57,9 +59,11 @@ function AppContent({ onReady }: AppContentProps) {
     <>
       <Routes>
         <Route path="/login" element={<AuthPage />} />
+        <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<BenchMap />} />
       </Routes>
       {session?.user && <AchievementNotification userId={session.user.id} />}
+      <PWAInstallPrompt />
     </>
   );
 }

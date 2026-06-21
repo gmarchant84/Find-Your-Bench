@@ -1,4 +1,4 @@
-import { Plus, Trophy, Filter, Search, Navigation, Map, List, User, LogIn } from 'lucide-react';
+import { Plus, Trophy, Filter, Search, Navigation, Map, List, User, LogIn, Info } from 'lucide-react';
 import { BENCH_VIBES } from '../lib/supabase';
 
 interface HeaderProps {
@@ -37,6 +37,7 @@ export default function Header({
   onAddBench,
   onCategoryChange,
   onGoHome,
+  onShowAbout,
 }: HeaderProps) {
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40">
@@ -105,6 +106,7 @@ export default function Header({
             { id: 'map' as const, label: 'Map', icon: Map, active: viewMode === 'map', onClick: () => onViewModeChange('map') },
             { id: 'list' as const, label: 'List', icon: List, active: viewMode === 'list', onClick: () => onViewModeChange('list') },
             { id: 'leaderboard' as const, label: 'Leaders', icon: Trophy, active: showLeaderboard, onClick: onShowLeaderboard },
+            { id: 'about' as const, label: 'About', icon: Info, active: false, onClick: () => onShowAbout?.() },
           ].map(({ id, label, icon: Icon, active, onClick }) => (
             <button
               key={id}

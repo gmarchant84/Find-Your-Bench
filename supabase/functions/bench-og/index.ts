@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://findyourbench.app";
-const DEFAULT_OG_IMAGE = `${APP_URL}/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png`;
+const DEFAULT_OG_IMAGE = `${APP_URL}/fyb-logo.png`;
 const SITE_NAME = "Find Your Bench";
 
 function escapeHtml(s: string): string {
@@ -114,10 +114,19 @@ Deno.serve(async (req: Request) => {
         : bench.description
       : `Discover this bench on ${SITE_NAME}.`;
 
-    const image =
-      Array.isArray(bench.photos) && bench.photos.length > 0
-        ? bench.photos[0]
-        : DEFAULT_OG_IMAGE;
+    // Try bench_photos table first (more reliable than legacy photos array)
+    let image = DEFAULT_OG_IMAGE;
+    const { data: primaryPhoto } = await supabase
+      .from("bench_photos")
+      .select("photo_url")
+      .eq("bench_id", bench.id)
+      .eq("is_primary", true)
+      .maybeSingle();
+    if (primaryPhoto?.photo_url) {
+      image = primaryPhoto.photo_url;
+    } else if (Array.isArray(bench.photos) && bench.photos.length > 0) {
+      image = bench.photos[0];
+    }
 
     const html = buildHtml({ url: benchUrl, title, description, image });
 
