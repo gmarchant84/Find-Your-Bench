@@ -58,7 +58,7 @@ export default function AboutPage() {
             Find Your Bench started with a dog, a bagel, and nowhere to sit.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            The idea was simple: grab a coffee or a sandwich, wander around the neighborhood with the dog, and find a good bench to settle into for a bit. Sometimes a quick bite, sometimes a long stay. The problem was there was no way to know where the good benches were — or if there was even one around the next corner. You just had to wander and hope.
+            The idea was simple: grab a coffee or a sandwich, wander around the neighborhood with Maisel (a Bernedoodle with strong opinions about routes), and find a good bench to settle into for a bit. Sometimes a quick bite, sometimes a long stay. The problem was there was no way to know where the good benches were — or if there was even one around the next corner. You just had to wander and hope.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
             That feeling turned into something bigger. Exploring a new neighborhood, traveling to a new city, going on vacation — benches became a reason to slow down and actually look at a place. Finding a great one started to feel like a small victory. And once you start noticing benches, you notice them everywhere.
