@@ -68,6 +68,20 @@ export default function AboutPage() {
           </p>
         </div>
 
+        {/* What counts as a bench */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
+          <h3 className="font-bold text-gray-900 mb-4">What counts as a bench?</h3>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            More than you'd think. A bench is less about what it's made of and more about what it does. It's a place to stop, sit down, and take in wherever you are.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed mb-4">
+            That could be a traditional slatted park bench. It could be a big flat rock at the top of a trail. An old stump at the edge of the woods. A low wall with a view. A concrete ledge that's been unofficially adopted by the neighborhood for decades.
+          </p>
+          <p className="text-gray-600 text-sm leading-relaxed">
+            If it's outside, and you can sit on it, and it's worth knowing about, it belongs on the map.
+          </p>
+        </div>
+
         {/* Why benches */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
           <h3 className="font-bold text-gray-900 mb-4">Why benches?</h3>
