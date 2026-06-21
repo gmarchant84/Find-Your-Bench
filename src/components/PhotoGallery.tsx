@@ -57,7 +57,7 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
         supabase.auth.getUser(),
         supabase
           .from('bench_photos')
-          .select('*, profiles:user_id (username)')
+          .select('id, photo_url, caption, category, helpful_count, uploaded_at, user_id')
           .eq('bench_id', benchId)
           .order('is_primary', { ascending: false })
           .order('helpful_count', { ascending: false })
@@ -71,16 +71,31 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
         return;
       }
 
+      // Fetch usernames separately — don't block on profiles RLS
+      const userIds = [...new Set(photosData.map(p => p.user_id).filter(Boolean))];
+      let usernameMap: Record<string, string> = {};
+      if (userIds.length > 0) {
+        const { data: profileRows } = await supabase
+          .from('profiles')
+          .select('id, username')
+          .in('id', userIds);
+        (profileRows ?? []).forEach(p => { if (p.username) usernameMap[p.id] = p.username; });
+      }
+
+      const photosWithProfiles = photosData.map(photo => ({
+        ...photo,
+        profiles: photo.user_id && usernameMap[photo.user_id] ? { username: usernameMap[photo.user_id] } : undefined,
+      }));
+
       if (user) {
         const { data: votes } = await supabase
           .from('photo_votes')
           .select('photo_id')
           .eq('user_id', user.id);
-
         const votedPhotoIds = new Set(votes?.map(v => v.photo_id) || []);
-        setPhotos(photosData.map(photo => ({ ...photo, user_voted: votedPhotoIds.has(photo.id) })));
+        setPhotos(photosWithProfiles.map(photo => ({ ...photo, user_voted: votedPhotoIds.has(photo.id) })));
       } else {
-        setPhotos(photosData);
+        setPhotos(photosWithProfiles);
       }
     } catch (err) {
       console.error('Error loading photos:', err);
