@@ -1,6 +1,6 @@
 import { Star, MapPin, Tag, Maximize2 } from 'lucide-react';
 import { useState } from 'react';
-import { Bench, getVibe } from '../lib/supabase';
+import { Bench, getVibe, getLocationType } from '../lib/supabase';
 import VerificationBadge from './VerificationBadge';
 import ImageLightbox from './ImageLightbox';
 
@@ -13,6 +13,7 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
   const averageRating = bench.average_rating || 0;
   const totalRatings = bench.total_ratings || 0;
   const vibe = getVibe(bench.vibe_category);
+  const locType = getLocationType(bench.location_type);
   const [lightbox, setLightbox] = useState(false);
 
   return (
@@ -94,6 +95,14 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
             <p className="text-sm text-gray-600 mb-3 line-clamp-2">{bench.description}</p>
           )}
 
+          {locType && (
+            <div className="mb-2">
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">
+                <span>{locType.emoji}</span>
+                <span>{locType.label}</span>
+              </span>
+            </div>
+          )}
           {(bench.tags ?? []).length > 0 && (
             <div className="flex flex-wrap gap-1 mb-3">
               {(bench.tags ?? []).slice(0, 3).map((tag) => (

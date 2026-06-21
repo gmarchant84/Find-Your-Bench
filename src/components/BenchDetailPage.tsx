@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus, Bookmark, Check, X, AlertCircle, Camera, CheckCircle2, FolderOpen, Share2, ExternalLink, LogIn } from 'lucide-react';
-import { supabase, getVibe } from '../lib/supabase';
+import { supabase, getVibe, getLocationType } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import VerificationBadge from './VerificationBadge';
 import FoundingBencherBadge from './FoundingBencherBadge';
@@ -217,6 +217,7 @@ interface Bench {
   is_hidden?: boolean;
   duplicate_of?: string | null;
   vibe_category?: string | null;
+  location_type?: string | null;
 }
 
 interface Rating {
@@ -660,12 +661,21 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
               </div>
             )}
 
-            {/* Tags */}
-            {bench.tags && bench.tags.length > 0 && (
+            {/* Location type + Tags */}
+            {(bench.location_type || (bench.tags && bench.tags.length > 0)) && (
               <div>
                 <h2 className="text-base font-semibold text-gray-900 mb-2">Features</h2>
                 <div className="flex flex-wrap gap-2">
-                  {bench.tags.map((tag, i) => (
+                  {(() => {
+                    const lt = getLocationType(bench.location_type as any);
+                    return lt ? (
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-50 text-blue-700 border border-blue-200 rounded-full text-sm font-medium">
+                        <span>{lt.emoji}</span>
+                        <span>{lt.label}</span>
+                      </span>
+                    ) : null;
+                  })()}
+                  {(bench.tags ?? []).map((tag, i) => (
                     <span key={i} className="px-3 py-1 bg-green-50 text-green-700 border border-green-200 rounded-full text-sm">
                       {tag}
                     </span>

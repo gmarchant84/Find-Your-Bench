@@ -74,6 +74,7 @@ export default function BenchMap() {
   const [showFilters, setShowFilters] = useState(false);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState(() => loadMapState()?.category ?? 'all');
+  const [selectedLocationType, setSelectedLocationType] = useState('all');
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
   const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -173,15 +174,17 @@ export default function BenchMap() {
   }, [userLocation]);
 
   useEffect(() => {
-    if (selectedCategory === 'all') {
-      setFilteredBenches(benches);
-    } else {
-      setFilteredBenches(benches.filter(bench => bench.vibe_category === selectedCategory));
+    let filtered = benches;
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(b => b.vibe_category === selectedCategory);
     }
-    // Persist category change
+    if (selectedLocationType !== 'all') {
+      filtered = filtered.filter(b => b.location_type === selectedLocationType);
+    }
+    setFilteredBenches(filtered);
     savedState.current = { ...savedState.current, category: selectedCategory };
     saveMapState(savedState.current);
-  }, [benches, selectedCategory]);
+  }, [benches, selectedCategory, selectedLocationType]);
 
   const getUserLocation = () => {
     if ('geolocation' in navigator) {
@@ -398,6 +401,7 @@ export default function BenchMap() {
     setShowLeaderboard(false);
     setViewMode('map');
     setSelectedCategory('all');
+    setSelectedLocationType('all');
     setShowFilters(false);
     setSearchCenter(null);
     // Restore distances from user location when clearing search
@@ -466,6 +470,7 @@ export default function BenchMap() {
         showProfile={showProfile}
         userLocation={userLocation}
         selectedCategory={selectedCategory}
+        selectedLocationType={selectedLocationType}
         isLoggedIn={!!session}
         onViewModeChange={setViewMode}
         onShowLeaderboard={() => setShowLeaderboard(true)}
@@ -475,6 +480,7 @@ export default function BenchMap() {
         onShowNearby={handleShowNearby}
         onAddBench={handleOpenAddModal}
         onCategoryChange={setSelectedCategory}
+        onLocationTypeChange={setSelectedLocationType}
         onGoHome={handleGoHome}
         onShowAbout={() => navigate('/about')}
       />

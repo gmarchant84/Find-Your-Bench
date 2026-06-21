@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Camera, Upload, MapPin, Tag, Navigation, AlertCircle, Loader2 } from 'lucide-react';
-import { supabase, friendlyError } from '../lib/supabase';
+import { supabase, friendlyError, LOCATION_TYPES, LocationType } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useAchievements } from '../hooks/useAchievements';
 
@@ -12,6 +12,72 @@ interface AddBenchProps {
 }
 
 const AVAILABLE_TAGS = ['scenic', 'quiet', 'sunny', 'shady', 'people-watching'];
+
+// Map Google place types to our location_type IDs
+const PLACE_TYPE_MAP: Record<string, LocationType> = {
+  // Trail / Park
+  park: 'neighborhood',
+  natural_feature: 'trail',
+  campground: 'state-park',
+  // Beach / Water
+  beach: 'beach',
+  marina: 'waterfront',
+  // Urban
+  downtown: 'downtown',
+  neighborhood: 'neighborhood',
+  sublocality: 'neighborhood',
+  // Campus
+  university: 'campus',
+  school: 'campus',
+  // Cemetery
+  cemetery: 'cemetery',
+};
+
+function detectLocationTypeFromGeocode(results: google.maps.GeocoderResult[]): LocationType | null {
+  for (const result of results) {
+    for (const type of result.types) {
+      // Check for trail/hiking signals in address components
+      const hasTrailSignal = result.address_components.some(c =>
+        c.long_name.toLowerCase().includes('trail') ||
+        c.long_name.toLowerCase().includes('park') ||
+        c.long_name.toLowerCase().includes('preserve') ||
+        c.long_name.toLowerCase().includes('national') ||
+        c.long_name.toLowerCase().includes('state park')
+      );
+      if (hasTrailSignal) {
+        const name = result.address_components.find(c =>
+          c.long_name.toLowerCase().includes('national') || c.long_name.toLowerCase().includes('state park')
+        );
+        if (name) return 'state-park';
+        return 'trail';
+      }
+
+      if (type === 'beach') return 'beach';
+      if (type === 'cemetery') return 'cemetery';
+      if (type === 'university' || type === 'school') return 'campus';
+      if (type === 'natural_feature') return 'trail';
+      if (PLACE_TYPE_MAP[type]) return PLACE_TYPE_MAP[type];
+    }
+
+    // Check address text for downtown signals
+    const hasDowntownSignal = result.address_components.some(c =>
+      c.long_name.toLowerCase().includes('downtown') ||
+      c.long_name.toLowerCase().includes('financial district') ||
+      c.long_name.toLowerCase().includes('central business')
+    );
+    if (hasDowntownSignal) return 'downtown';
+
+    // Waterfront signal
+    const hasWaterSignal = result.address_components.some(c =>
+      c.long_name.toLowerCase().includes('waterfront') ||
+      c.long_name.toLowerCase().includes('embarcadero') ||
+      c.long_name.toLowerCase().includes('harbor') ||
+      c.long_name.toLowerCase().includes('marina')
+    );
+    if (hasWaterSignal) return 'waterfront';
+  }
+  return null;
+}
 
 const ALLOWED_MIME = ['image/jpeg', 'image/png', 'image/webp'];
 const MAX_FILE_BYTES = 10 * 1024 * 1024;
@@ -48,6 +114,8 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
   const [latitude, setLatitude] = useState(initialLat?.toString() || '');
   const [longitude, setLongitude] = useState(initialLng?.toString() || '');
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [locationType, setLocationType] = useState<LocationType | null>(null);
+  const [locationTypeDetecting, setLocationTypeDetecting] = useState(false);
   const [photoFile, setPhotoFile] = useState<File | null>(null);
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,6 +127,23 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
   useEffect(() => {
     if (!initialLat && !initialLng) getCurrentLocation();
   }, []);
+
+  // Auto-detect location type whenever coordinates are set
+  useEffect(() => {
+    const lat = parseFloat(latitude);
+    const lng = parseFloat(longitude);
+    if (!isNaN(lat) && !isNaN(lng) && window.google?.maps) {
+      setLocationTypeDetecting(true);
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ location: { lat, lng } }, (results, status) => {
+        setLocationTypeDetecting(false);
+        if (status === 'OK' && results && results.length > 0) {
+          const detected = detectLocationTypeFromGeocode(results);
+          if (detected) setLocationType(detected);
+        }
+      });
+    }
+  }, [latitude, longitude]);
 
   const getCurrentLocation = () => {
     setGettingLocation(true);
@@ -151,6 +236,7 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
           longitude: parseFloat(longitude),
           description,
           tags: selectedTags,
+          location_type: locationType,
           founding_user_id: session.user.id,
           photos: photoUrls.length > 0 ? photoUrls : null,
         })
@@ -244,6 +330,47 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
                 placeholder="What makes this bench special?"
                 required
               />
+            </div>
+
+            {/* Location type */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="block text-sm font-semibold text-gray-700">
+                  Location Type
+                  {locationTypeDetecting && <Loader2 size={12} className="inline ml-2 animate-spin text-gray-400" />}
+                </label>
+                {locationType && (
+                  <button type="button" onClick={() => setLocationType(null)} className="text-xs text-gray-400 hover:text-gray-600">
+                    Clear
+                  </button>
+                )}
+              </div>
+              {locationTypeDetecting ? (
+                <p className="text-xs text-gray-400">Detecting from location...</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {LOCATION_TYPES.map((lt) => (
+                    <button
+                      key={lt.id}
+                      type="button"
+                      onClick={() => setLocationType(lt.id === locationType ? null : lt.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium transition-colors border ${
+                        locationType === lt.id
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                          : 'bg-blue-50 text-blue-700 border-blue-200 hover:border-blue-400'
+                      }`}
+                    >
+                      <span>{lt.emoji}</span>
+                      <span>{lt.label}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {locationType && !locationTypeDetecting && (
+                <p className="text-xs text-blue-600 mt-1.5">
+                  {LOCATION_TYPES.find(l => l.id === locationType)?.emoji} Auto-detected. Tap another to change.
+                </p>
+              )}
             </div>
 
             {/* Photo upload — storage only, no external URLs */}

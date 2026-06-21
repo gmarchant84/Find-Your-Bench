@@ -33,6 +33,41 @@ export function getVibe(id: VibeCategory | null | undefined) {
   return BENCH_VIBES.find(v => v.id === id) ?? null;
 }
 
+export type LocationType =
+  | 'downtown'
+  | 'neighborhood'
+  | 'waterfront'
+  | 'trail'
+  | 'state-park'
+  | 'beach'
+  | 'campus'
+  | 'cemetery'
+  | 'rooftop'
+  | 'plaza'
+  | 'other';
+
+export const LOCATION_TYPES: Array<{
+  id: LocationType;
+  label: string;
+  emoji: string;
+}> = [
+  { id: 'downtown',     label: 'Downtown',        emoji: '🏙️' },
+  { id: 'neighborhood', label: 'Neighborhood',     emoji: '🏘️' },
+  { id: 'waterfront',   label: 'Waterfront',       emoji: '🌊' },
+  { id: 'trail',        label: 'Trail / Hiking',   emoji: '🥾' },
+  { id: 'state-park',   label: 'State / Nat. Park',emoji: '🌲' },
+  { id: 'beach',        label: 'Beach',            emoji: '🏖️' },
+  { id: 'campus',       label: 'Campus',           emoji: '🎓' },
+  { id: 'cemetery',     label: 'Cemetery',         emoji: '🪦' },
+  { id: 'rooftop',      label: 'Rooftop',          emoji: '🏗️' },
+  { id: 'plaza',        label: 'Plaza / Square',   emoji: '🏛️' },
+  { id: 'other',        label: 'Other',            emoji: '📍' },
+];
+
+export function getLocationType(id: LocationType | null | undefined) {
+  return LOCATION_TYPES.find(l => l.id === id) ?? null;
+}
+
 export interface Bench {
   id: string;
   name: string;
@@ -54,6 +89,7 @@ export interface Bench {
   is_hidden?: boolean;
   duplicate_of?: string | null;
   vibe_category?: VibeCategory | null;
+  location_type?: LocationType | null;
   // Joined from profiles — present when fetched with founder join
   founder_username?: string | null;
   founder_is_founding_bencher?: boolean;

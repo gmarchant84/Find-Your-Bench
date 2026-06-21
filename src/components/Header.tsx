@@ -37,6 +37,7 @@ export default function Header({
   onShowNearby,
   onAddBench,
   onCategoryChange,
+  onLocationTypeChange,
   onGoHome,
   onShowAbout,
 }: HeaderProps) {
@@ -163,11 +164,13 @@ export default function Header({
         </button>
       </div>
 
-      {/* Vibe filter drawer */}
+      {/* Filter drawer */}
       {showFilters && (
         <div className="border-t border-gray-100 bg-white animate-fade-in">
-          <div className="max-w-7xl mx-auto px-3 sm:px-4 py-3 flex items-center gap-2">
-            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide flex-1">
+          {/* Vibe row */}
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 pt-3 pb-1">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Vibe</p>
+            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
               <button
                 onClick={() => onCategoryChange('all')}
                 className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium text-xs transition border btn-press ${
@@ -197,15 +200,51 @@ export default function Header({
                 );
               })}
             </div>
-            {selectedCategory !== 'all' && (
-              <button
-                onClick={() => onCategoryChange('all')}
-                className="flex-shrink-0 text-xs text-gray-400 hover:text-gray-700 transition font-medium"
-              >
-                Clear
-              </button>
-            )}
           </div>
+          {/* Location type row */}
+          <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3">
+            <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Location</p>
+            <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
+              <button
+                onClick={() => onLocationTypeChange('all')}
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium text-xs transition border btn-press ${
+                  selectedLocationType === 'all'
+                    ? 'bg-gray-900 text-white border-gray-900'
+                    : 'bg-white text-gray-600 border-gray-200 hover:border-gray-400'
+                }`}
+              >
+                <span>📍</span>
+                <span>Any</span>
+              </button>
+              {LOCATION_TYPES.filter(l => l.id !== 'other').map((lt) => {
+                const isActive = selectedLocationType === lt.id;
+                return (
+                  <button
+                    key={lt.id}
+                    onClick={() => onLocationTypeChange(lt.id)}
+                    className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full font-medium text-xs transition border btn-press ${
+                      isActive
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                        : 'bg-white text-gray-600 border-gray-200 hover:border-blue-300'
+                    }`}
+                  >
+                    <span>{lt.emoji}</span>
+                    <span className="whitespace-nowrap">{lt.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {(selectedCategory !== 'all' || selectedLocationType !== 'all') && (
+            <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3 flex justify-end">
+              <button
+                onClick={() => { onCategoryChange('all'); onLocationTypeChange('all'); }}
+                className="text-xs text-gray-400 hover:text-gray-700 transition font-medium"
+              >
+                Clear all filters
+              </button>
+            </div>
+          )}
         </div>
       )}
     </header>
