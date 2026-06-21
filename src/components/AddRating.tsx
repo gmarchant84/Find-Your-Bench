@@ -6,11 +6,12 @@ import { useAchievements } from '../hooks/useAchievements';
 
 interface AddRatingProps {
   benchId: string;
+  foundingUserId?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
+export function AddRating({ benchId, foundingUserId, onClose, onSuccess }: AddRatingProps) {
   const { session } = useAuth();
   const { triggerAchievementCheck } = useAchievements();
   const [overallRating, setOverallRating] = useState(0);
@@ -53,6 +54,16 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
         });
 
       if (insertError) throw insertError;
+
+      // Notify the founding user if someone else rated their bench
+      if (foundingUserId && foundingUserId !== session?.user?.id) {
+        await supabase.from('bench_notifications').insert({
+          user_id: foundingUserId,
+          bench_id: benchId,
+          actor_id: session?.user?.id,
+          type: 'rating',
+        });
+      }
 
       await triggerAchievementCheck();
       onSuccess();

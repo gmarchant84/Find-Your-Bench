@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 interface AddPhotoSectionProps {
   benchId: string;
   hasPhotos: boolean;
+  foundingUserId?: string | null;
   onUploaded: (photoUrl: string) => void;
 }
 
@@ -52,7 +53,7 @@ async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<
   });
 }
 
-export default function AddPhotoSection({ benchId, hasPhotos, onUploaded }: AddPhotoSectionProps) {
+export default function AddPhotoSection({ benchId, hasPhotos, foundingUserId, onUploaded }: AddPhotoSectionProps) {
   const { session } = useAuth();
   const [isDragging, setIsDragging] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
@@ -176,6 +177,16 @@ export default function AddPhotoSection({ benchId, hasPhotos, onUploaded }: AddP
       });
 
       if (insertError) throw insertError;
+
+      // Notify the founding user if someone else added a photo
+      if (foundingUserId && foundingUserId !== session.user.id) {
+        await supabase.from('bench_notifications').insert({
+          user_id: foundingUserId,
+          bench_id: benchId,
+          actor_id: session.user.id,
+          type: 'photo',
+        });
+      }
 
       // Append URL to benches.photos[] so the header image updates
       const { data: benchData } = await supabase

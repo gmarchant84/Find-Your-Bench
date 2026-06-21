@@ -1,4 +1,5 @@
 import { Plus, Trophy, Filter, Search, Navigation, Map, List, User, LogIn, Info } from 'lucide-react';
+import NotificationBell from './NotificationBell';
 import { BENCH_VIBES } from '../lib/supabase';
 
 interface HeaderProps {
@@ -75,17 +76,20 @@ export default function Header({
             <span className="hidden xs:inline">Add</span>
           </button>
           {isLoggedIn ? (
-            <button
-              onClick={onShowProfile}
-              className={`w-9 h-9 rounded-full flex items-center justify-center transition border btn-press ${
-                showProfile
-                  ? 'bg-gray-900 border-gray-900 text-white'
-                  : 'bg-gray-100 border-gray-200 hover:bg-gray-200 text-gray-700'
-              }`}
-              aria-label="Profile"
-            >
-              <User className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-1.5">
+              <NotificationBell />
+              <button
+                onClick={onShowProfile}
+                className={`w-9 h-9 rounded-full flex items-center justify-center transition border btn-press ${
+                  showProfile
+                    ? 'bg-gray-900 border-gray-900 text-white'
+                    : 'bg-gray-100 border-gray-200 hover:bg-gray-200 text-gray-700'
+                }`}
+                aria-label="Profile"
+              >
+                <User className="w-4 h-4" />
+              </button>
+            </div>
           ) : (
             <button
               onClick={onShowProfile}

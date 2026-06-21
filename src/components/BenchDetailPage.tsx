@@ -409,7 +409,19 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
     } else {
       const { error } = await supabase.from('visited_benches')
         .insert({ bench_id: bench.id, user_id: session.user.id });
-      if (!error) { setIsVisited(true); showMsg('Marked as visited!'); }
+      if (!error) {
+        setIsVisited(true);
+        showMsg('Marked as visited!');
+        // Notify founding user
+        if (bench.founding_user_id && bench.founding_user_id !== session.user.id) {
+          await supabase.from('bench_notifications').insert({
+            user_id: bench.founding_user_id,
+            bench_id: bench.id,
+            actor_id: session.user.id,
+            type: 'visit',
+          });
+        }
+      }
     }
   };
 
@@ -450,6 +462,15 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
       if (!error) {
         setUserConfirmations({ exists: type === 'exists', removed: type === 'removed' });
         showMsg(type === 'exists' ? 'Thanks for confirming!' : 'Thanks for reporting!');
+        // Notify founding user
+        if (bench.founding_user_id && bench.founding_user_id !== session.user.id) {
+          await supabase.from('bench_notifications').insert({
+            user_id: bench.founding_user_id,
+            bench_id: bench.id,
+            actor_id: session.user.id,
+            type: 'confirmation',
+          });
+        }
         await refreshBench();
       }
     }
@@ -736,6 +757,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
             {session ? (
               <AddPhotoSection
                 benchId={bench.id}
+                foundingUserId={bench.founding_user_id}
                 hasPhotos={(bench.photos?.length ?? 0) > 0}
                 onUploaded={handlePhotoUploaded}
               />
@@ -834,6 +856,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
       {showAddRating && (
         <AddRating
           benchId={bench.id}
+          foundingUserId={bench.founding_user_id}
           onClose={() => setShowAddRating(false)}
           onSuccess={() => { setShowAddRating(false); fetchRatings(); refreshBench(); }}
         />
