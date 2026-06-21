@@ -207,7 +207,7 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
             <img
               src={photo.photo_url}
               alt={photo.caption || 'Bench photo'}
-              className="w-full h-full object-cover object-bottom transition-transform group-hover:scale-105"
+              className="w-full h-full object-cover object-center transition-transform group-hover:scale-105"
               loading="lazy"
               onError={(e) => { (e.currentTarget.parentElement as HTMLElement).style.display = 'none'; }}
             />

@@ -28,7 +28,7 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
               <img
                 src={(bench.photos ?? [])[0]}
                 alt={bench.name}
-                className="w-full h-full object-cover object-bottom"
+                className="w-full h-full object-cover object-center"
                 onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
               />
               <button
