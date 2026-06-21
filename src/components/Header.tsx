@@ -48,7 +48,7 @@ export default function Header({
           className="flex items-center gap-3 hover:opacity-80 active:opacity-60 transition-opacity min-w-0"
         >
           <img
-            src="/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png"
+            src="/fyb-logo.png"
             alt="Find Your Bench"
             className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl object-contain flex-shrink-0"
             style={{ width: 'clamp(3.125rem, 6vw, 4.0625rem)', height: 'clamp(3.125rem, 6vw, 4.0625rem)' }}
