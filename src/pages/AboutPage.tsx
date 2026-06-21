@@ -55,16 +55,16 @@ export default function AboutPage() {
             <h3 className="font-bold text-gray-900">Our Mission</h3>
           </div>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            Find Your Bench started with a dog, a bagel, and nowhere to sit.
+            This whole thing started because of a dog and a bagel.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            The idea was simple: grab a coffee or a sandwich, wander around the neighborhood with Maisel (a Bernedoodle with strong opinions about routes), and find a good bench to settle into for a bit. Sometimes a quick bite, sometimes a long stay. The problem was there was no way to know where the good benches were — or if there was even one around the next corner. You just had to wander and hope.
+            The routine was simple. Grab a coffee or a sandwich, head out with Maisel (a Bernedoodle with very strong opinions about which way to go), and find somewhere good to sit down for a bit. Quick bite or long stay, didn't matter. The problem was you never really knew if a bench was around the next corner or twenty minutes away. You just wandered and hoped.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            That feeling turned into something bigger. Exploring a new neighborhood, traveling to a new city, going on vacation — benches became a reason to slow down and actually look at a place. Finding a great one started to feel like a small victory. And once you start noticing benches, you notice them everywhere.
+            That small frustration turned into something fun. Start paying attention to benches in your neighborhood, then in new neighborhoods, then on trips. Finding a great one starts to feel like a little win. And once you're looking, you see them everywhere, each one its own thing.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed">
-            We're building the world's largest database of public benches so that anyone — dog walker, tourist, coffee in hand — can find a place to sit, anywhere they happen to be. Every bench added is an invitation for someone else to sit there too.
+            So we built the thing that didn't exist. A way to find benches, share them, and collect them wherever you go. Dog walker, tourist, just someone who needs five minutes outside. There's a bench for that.
           </p>
         </div>
 
@@ -72,10 +72,10 @@ export default function AboutPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
           <h3 className="font-bold text-gray-900 mb-4">Why benches?</h3>
           <p className="text-gray-600 text-sm leading-relaxed mb-4">
-            Public benches are one of the last truly free things. No ticket, no membership, no reservation. Just a seat in the world, open to anyone who needs a moment.
+            Public benches are genuinely free. No ticket, no membership, no reservation. Just a seat that's there for anyone.
           </p>
           <p className="text-gray-600 text-sm leading-relaxed">
-            They mark the places communities care about — outside the bakery that's been there since 1952, at the overlook where the whole city opens up, beside the tree someone planted in memory of a child. Cataloging them is a way of saying: this place matters. Someone sat here and thought it was worth remembering.
+            They also tend to be in the places that matter. Outside the bakery that's been there forever, at the overlook with the view, next to the tree someone planted for a reason. Putting them on a map is a small way of saying: this spot is worth knowing about.
           </p>
         </div>
 
