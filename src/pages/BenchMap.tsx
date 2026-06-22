@@ -327,7 +327,15 @@ export default function BenchMap() {
     setShowAddModal(false);
     setAddBenchLocation(null);
     setPlacementMode(false);
-    showToast('success', 'Bench added! Thanks for contributing.');
+
+    // Check if this was their first bench
+    const { count: benchCount } = await supabase
+      .from('benches')
+      .select('id', { count: 'exact', head: true })
+      .eq('founding_user_id', session?.user?.id ?? '');
+    const isFirstBench = (benchCount ?? 0) <= 1;
+    showToast('success', isFirstBench ? "Welcome. You're no longer a ground-sitter." : 'Bench added! Thanks for contributing.');
+
     fetchBenches();
     checkIfNewUser();
   };
