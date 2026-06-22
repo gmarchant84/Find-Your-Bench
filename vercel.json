@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/bench/:id", "destination": "/api/bench-preview" },
+    { "source": "/bench/:id", "destination": "/api/bench-preview?id=:id" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
