@@ -9,13 +9,11 @@ const ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY!;
 export default async function handler(req: Request) {
   const url = new URL(req.url);
 
-  // Extract bench id from the path /bench/:id
-  const match = url.pathname.match(/^\/bench\/([0-9a-f-]{36})$/i);
-  if (!match) {
+  // id injected via vercel.json rewrite: /bench/:id -> /api/bench-preview?id=:id
+  const id = url.searchParams.get("id");
+  if (!id) {
     return new Response(null, { status: 302, headers: { Location: "/" } });
   }
-
-  const id = match[1];
   const ua = req.headers.get("user-agent") || "";
 
   // Regular browsers: let the SPA handle it (serve index.html)
