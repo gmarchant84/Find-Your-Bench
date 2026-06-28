@@ -20,11 +20,15 @@ export default async function handler(req: Request) {
 
   const ua = req.headers.get("user-agent") || "";
 
-  // Regular browsers: redirect straight to the SPA bench page
+  // Regular browsers: serve index.html so the SPA handles routing client-side
+  // (Do NOT redirect to APP_URL — that causes a redirect loop via the Vercel domain redirect)
   if (!CRAWLER_UA.test(ua)) {
-    return new Response(null, {
-      status: 302,
-      headers: { Location: `${APP_URL}/bench/${id}` },
+    const origin = new URL(req.url).origin;
+    const indexRes = await fetch(`${origin}/index.html`);
+    const html = await indexRes.text();
+    return new Response(html, {
+      status: 200,
+      headers: { 'content-type': 'text/html; charset=utf-8' },
     });
   }
 
