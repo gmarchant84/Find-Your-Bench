@@ -387,37 +387,37 @@ export default function BenchMap() {
         </div>
       )}
 
-      {/* Placement mode banner — fixed so it isn't clipped by the map container */}
+      {/* Placement mode — instruction chip at top, confirm button near the pin at bottom */}
       {placementMode && (
-        <div className="fixed inset-x-0 top-4 flex justify-center z-[90] pointer-events-none px-4">
-          <div className="bg-gray-900/90 backdrop-blur-sm text-white rounded-2xl shadow-2xl flex items-center gap-3 px-5 py-3.5 pointer-events-auto max-w-sm w-full">
-            <div className="flex-1 min-w-0">
-              {placedPin ? (
-                <p className="text-sm font-semibold leading-snug">Pin placed — confirm or reposition</p>
-              ) : (
-                <p className="text-sm font-semibold leading-snug">Tap the map to place your bench</p>
-              )}
-              <p className="text-xs text-gray-400 mt-0.5">Tap Cancel to go back</p>
-            </div>
-            <div className="flex items-center gap-2 flex-shrink-0">
-              {placedPin && (
-                <button
-                  onClick={() => handlePlacementConfirm(placedPin.lat, placedPin.lng)}
-                  className="px-3.5 py-2 bg-green-500 hover:bg-green-400 text-white text-sm font-bold rounded-xl transition-colors"
-                >
-                  Confirm
-                </button>
-              )}
+        <>
+          {/* Top instruction chip */}
+          <div className="fixed inset-x-0 top-4 flex justify-center z-[90] pointer-events-none px-4">
+            <div className="bg-gray-900/90 backdrop-blur-sm text-white rounded-2xl shadow-2xl flex items-center gap-3 px-5 py-3 pointer-events-auto">
+              <p className="text-sm font-semibold">
+                {placedPin ? 'Pin placed — confirm or tap to reposition' : 'Tap the map to place your bench'}
+              </p>
               <button
                 onClick={handlePlacementCancel}
-                className="p-2 hover:bg-white/10 rounded-xl transition-colors"
+                className="p-1.5 hover:bg-white/10 rounded-xl transition-colors ml-1"
                 aria-label="Cancel placement"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
           </div>
-        </div>
+
+          {/* Confirm button — floats at bottom near where the pin lands */}
+          {placedPin && (
+            <div className="fixed inset-x-0 bottom-8 flex justify-center z-[90] pointer-events-none px-4">
+              <button
+                onClick={() => handlePlacementConfirm(placedPin.lat, placedPin.lng)}
+                className="pointer-events-auto px-8 py-4 bg-green-500 hover:bg-green-400 active:bg-green-600 text-white text-base font-bold rounded-2xl shadow-2xl transition-colors"
+              >
+                Confirm Location
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       <Header
