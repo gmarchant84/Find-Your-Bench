@@ -58,7 +58,7 @@ async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<
 }
 
 const STEP_ORDER: Step[] = ['location', 'details', 'review'];
-const STEP_LABELS = ['Location', 'Details', 'Review'];
+const STEP_LABELS = ['Location & Photo', 'Details', 'Review'];
 
 function StepIndicator({ step }: { step: Step }) {
   if (step === 'success') return null;
@@ -403,7 +403,7 @@ export default function AddBenchModal({
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-bold text-gray-900">
               {step === 'success' ? 'Bench Added!' :
-               step === 'location' ? 'Step 1: Location' :
+               step === 'location' ? 'Step 1: Location & Photo' :
                step === 'details' ? 'Step 2: Details' :
                'Step 3: Rate It'}
             </h2>
@@ -491,6 +491,47 @@ export default function AddBenchModal({
                 )}
               </div>
 
+              {/* Photo upload — best taken while standing at the bench */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Add a photo <span className="text-gray-400 font-normal">(optional — take one now while you're here!)</span>
+                </label>
+                {pendingPhotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {pendingPhotos.map((photo, i) => (
+                      <div key={i} className="relative aspect-square group">
+                        <img src={photo.preview} alt="" className="w-full h-full object-cover rounded-xl border-2 border-gray-100" />
+                        <button
+                          type="button"
+                          onClick={() => setPendingPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button" onClick={() => cameraInputRef.current?.click()} disabled={isProcessingPhoto}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
+                  >
+                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                    Camera
+                  </button>
+                  <button
+                    type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessingPhoto}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
+                  >
+                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    Upload
+                  </button>
+                </div>
+                <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden" onChange={handlePhotoInput} />
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePhotoInput} />
+              </div>
+
               {nearbyBenches.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <div className="flex items-start gap-2 mb-2">
@@ -551,46 +592,6 @@ export default function AddBenchModal({
                     );
                   })}
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Photos <span className="text-gray-400 font-normal">(optional)</span>
-                </label>
-                {pendingPhotos.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    {pendingPhotos.map((photo, i) => (
-                      <div key={i} className="relative aspect-square group">
-                        <img src={photo.preview} alt="" className="w-full h-full object-cover rounded-xl border-2 border-gray-100" />
-                        <button
-                          type="button"
-                          onClick={() => setPendingPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                        >
-                          <X className="w-3 h-3 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="button" onClick={() => cameraInputRef.current?.click()} disabled={isProcessingPhoto}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                    Camera
-                  </button>
-                  <button
-                    type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessingPhoto}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    Upload
-                  </button>
-                </div>
-                <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden" onChange={handlePhotoInput} />
-                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePhotoInput} />
               </div>
 
               <div>
