@@ -271,59 +271,8 @@ export default function BenchMap() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleAddBench = async (benchData: any) => {
-    // photos comes as [{url, category, caption}] with already-uploaded storage URLs
-    const photosWithMeta: Array<{ url: string; category: string; caption: string }> = Array.isArray(benchData.photos)
-      ? benchData.photos
-          .map((p: any) => typeof p === 'string' ? { url: p, category: 'bench', caption: '' } : p)
-          .filter((p: any) => Boolean(p?.url))
-      : [];
-
-    const photoUrls = photosWithMeta.map(p => p.url);
-
-    const payload = {
-      name: benchData.name,
-      latitude: benchData.latitude,
-      longitude: benchData.longitude,
-      description: benchData.description || null,
-      photos: photoUrls.length > 0 ? photoUrls : null,
-      tags: benchData.tags?.length > 0 ? benchData.tags : null,
-      vibe_category: benchData.vibe_category ?? null,
-      founding_user_id: session?.user?.id ?? null,
-      original_name: benchData.name || null,
-      verification_status: 'unverified',
-    };
-
-    const { data, error } = await supabase
-      .from('benches')
-      .insert(payload)
-      .select()
-      .single();
-
-    if (error) {
-      showToast('error', 'Failed to save bench. Please try again.');
-      return;
-    }
-
-    if (!data) {
-      showToast('error', 'Failed to save bench. Please try again.');
-      return;
-    }
-
-    // Insert bench_photos rows for any uploaded photos
-    if (photosWithMeta.length > 0 && session?.user?.id) {
-      await supabase.from('bench_photos').insert(
-        photosWithMeta.map((p, i) => ({
-          bench_id: data.id,
-          user_id: session.user!.id,
-          photo_url: p.url,
-          category: p.category || 'bench',
-          caption: p.caption || null,
-          is_primary: i === 0,
-        }))
-      );
-    }
-
+  const handleBenchCreated = async (benchId: string) => {
+    // The new AddBenchModal handles all insertion itself — we just clean up UI and refresh
     setShowAddModal(false);
     setAddBenchLocation(null);
     setPlacementMode(false);
@@ -641,7 +590,7 @@ export default function BenchMap() {
             setAddBenchLocation(null);
             setPlacementMode(false);
           }}
-          onAdd={handleAddBench}
+          onSuccess={handleBenchCreated}
           initialLocation={addBenchLocation || undefined}
           onChangeLocation={handleChangeLocationManually}
         />
