@@ -147,6 +147,7 @@ export default function AddBenchModal({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [vibe, setVibe] = useState<VibeCategory | null>(null);
+  const [tags, setTags] = useState<string[]>([]);
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
 
@@ -297,6 +298,7 @@ export default function AddBenchModal({
         longitude: lng,
         description: description.trim() || null,
         photos: uploadedPhotos.length > 0 ? uploadedPhotos.map(p => p.url) : null,
+        tags: tags.length > 0 ? tags : null,
         vibe_category: vibe ?? null,
         founding_user_id: userId,
         original_name: finalName,
@@ -382,6 +384,7 @@ export default function AddBenchModal({
     setName('');
     setDescription('');
     setVibe(null);
+    setTags([]);
     setPendingPhotos([]);
     setOverallRating(0);
     setHoveredRating(0);
@@ -591,6 +594,34 @@ export default function AddBenchModal({
                       </button>
                     );
                   })}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
+                  Tags <span className="text-gray-400 font-normal">(optional — pick all that apply)</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    { id: 'scenic', label: 'Scenic View' },
+                    { id: 'quiet', label: 'Quiet' },
+                    { id: 'sunny', label: 'Sunny' },
+                    { id: 'shady', label: 'Shady' },
+                    { id: 'lunch', label: 'Good for Lunch' },
+                    { id: 'people-watching', label: 'People Watching' },
+                  ].map(tag => (
+                    <button
+                      key={tag.id} type="button"
+                      onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
+                      className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition ${
+                        tags.includes(tag.id)
+                          ? 'bg-green-100 text-green-800 border-green-400'
+                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      {tag.label}
+                    </button>
+                  ))}
                 </div>
               </div>
 
