@@ -237,8 +237,12 @@ interface Bench {
   location_type?: string | null;
 }
 
+// Badge priority order — highest rarity first
+const BADGE_PRIORITY = ['the_benchfather','bench_legend','park_ranger','perma_bencher','bench_obsessed','trail_blazer','the_reviewer','unstoppable','scout','connoisseur','on_a_roll','critic','groundskeeper','seedling'];
+
 interface Rating {
   id: string;
+  user_id: string;
   comfort: number;
   tranquility: number;
   people_watching: number;
@@ -247,6 +251,8 @@ interface Rating {
   overall: number;
   review_text: string | null;
   created_at: string;
+  reviewer_username?: string | null;
+  reviewer_badge?: string | null;
 }
 
 interface BenchDetailProps {
@@ -298,11 +304,18 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
     reverseGeocode();
     fetchPrimaryPhoto();
     if (bench.founding_user_id && !initialFounderUsername) {
-      supabase.from('profiles').select('username, is_founding_bencher, featured_badge_id').eq('id', bench.founding_user_id).maybeSingle().then(({ data }) => {
-        if (data) {
-          setFounderUsername(data.username ?? null);
-          setFounderIsFoundingBencher(data.is_founding_bencher ?? false);
-          setFounderFeaturedBadge(data.featured_badge_id ?? null);
+      Promise.all([
+        supabase.from('profiles').select('username, is_founding_bencher, featured_badge_id').eq('id', bench.founding_user_id).maybeSingle(),
+        supabase.from('user_achievement_unlocks').select('achievement_id').eq('user_id', bench.founding_user_id),
+      ]).then(([{ data: profile }, { data: unlocks }]) => {
+        if (profile) {
+          setFounderUsername(profile.username ?? null);
+          setFounderIsFoundingBencher(profile.is_founding_bencher ?? false);
+          const earned = (unlocks ?? []).map(u => u.achievement_id);
+          const badge = profile.featured_badge_id
+            ?? BADGE_PRIORITY.find(b => earned.includes(b))
+            ?? null;
+          setFounderFeaturedBadge(badge);
         }
       });
     }
@@ -366,9 +379,39 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
       return;
     }
     if (data) {
-      setRatings(data);
-      if (data.length > 0) {
-        const avg = data.reduce((sum, r) => sum + r.overall, 0) / data.length;
+      // Fetch profile data for all reviewers
+      const userIds = [...new Set(data.map(r => r.user_id).filter(Boolean))];
+      let profileMap = new Map<string, { username: string | null; featured_badge_id: string | null; earned_badges: string[] }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, username, featured_badge_id')
+          .in('id', userIds);
+        const { data: unlocks } = await supabase
+          .from('user_achievement_unlocks')
+          .select('user_id, achievement_id')
+          .in('user_id', userIds);
+        const earnedByUser = new Map<string, string[]>();
+        (unlocks ?? []).forEach(u => {
+          if (!earnedByUser.has(u.user_id)) earnedByUser.set(u.user_id, []);
+          earnedByUser.get(u.user_id)!.push(u.achievement_id);
+        });
+        (profiles ?? []).forEach(p => profileMap.set(p.id, {
+          username: p.username ?? null,
+          featured_badge_id: p.featured_badge_id ?? null,
+          earned_badges: earnedByUser.get(p.id) ?? [],
+        }));
+      }
+      const enriched = data.map(r => {
+        const profile = profileMap.get(r.user_id);
+        const badge = profile?.featured_badge_id
+          ?? BADGE_PRIORITY.find(b => profile?.earned_badges.includes(b))
+          ?? null;
+        return { ...r, reviewer_username: profile?.username ?? null, reviewer_badge: badge };
+      });
+      setRatings(enriched);
+      if (enriched.length > 0) {
+        const avg = enriched.reduce((sum, r) => sum + r.overall, 0) / enriched.length;
         setAvgRating(avg);
       }
     }
@@ -822,6 +865,17 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
             <div className="space-y-3">
               {ratings.map((rating) => (
                 <div key={rating.id} className="p-4 bg-white border border-gray-200 rounded-2xl shadow-sm">
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-1.5">
+                      {rating.reviewer_username && (
+                        <span className="text-sm font-semibold text-gray-800">@{rating.reviewer_username}</span>
+                      )}
+                      {rating.reviewer_badge && (
+                        <span className="text-sm" title={rating.reviewer_badge}>{BADGE_ICONS[rating.reviewer_badge] ?? ''}</span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-400">{new Date(rating.created_at).toLocaleDateString()}</span>
+                  </div>
                   <div className="flex items-center gap-1.5 mb-3">
                     {[...Array(5)].map((_, i) => (
                       <Star
@@ -830,9 +884,6 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
                       />
                     ))}
                     <span className="text-base font-bold text-gray-900 ml-1">{rating.overall.toFixed(1)}</span>
-                    <span className="text-xs text-gray-400 ml-auto">
-                      {new Date(rating.created_at).toLocaleDateString()}
-                    </span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 mb-3">

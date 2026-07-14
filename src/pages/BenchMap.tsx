@@ -240,21 +240,37 @@ export default function BenchMap() {
 
       // Fetch founder profiles in a single query
       const founderIds = [...new Set(benchData.map(b => b.founding_user_id).filter(Boolean))] as string[];
-      let profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean; featured_badge_id: string | null }>();
+      const BADGE_PRIORITY = ['the_benchfather','bench_legend','park_ranger','perma_bencher','bench_obsessed','trail_blazer','the_reviewer','unstoppable','scout','connoisseur','on_a_roll','critic','groundskeeper','seedling'];
+      let profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean; featured_badge_id: string | null; earned_badges: string[] }>();
       if (founderIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
           .select('id, username, is_founding_bencher, featured_badge_id')
           .in('id', founderIds);
-        (profiles ?? []).forEach(p => profileMap.set(p.id, { username: p.username ?? null, is_founding_bencher: p.is_founding_bencher ?? false, featured_badge_id: p.featured_badge_id ?? null }));
+        const { data: unlocks } = await supabase
+          .from('user_achievement_unlocks')
+          .select('user_id, achievement_id')
+          .in('user_id', founderIds);
+        const earnedByUser = new Map<string, string[]>();
+        (unlocks ?? []).forEach(u => {
+          if (!earnedByUser.has(u.user_id)) earnedByUser.set(u.user_id, []);
+          earnedByUser.get(u.user_id)!.push(u.achievement_id);
+        });
+        (profiles ?? []).forEach(p => profileMap.set(p.id, { username: p.username ?? null, is_founding_bencher: p.is_founding_bencher ?? false, featured_badge_id: p.featured_badge_id ?? null, earned_badges: earnedByUser.get(p.id) ?? [] }));
       }
 
-      const enriched = benchData.map(b => ({
-        ...b,
-        founder_username: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.username ?? null) : null,
-        founder_is_founding_bencher: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.is_founding_bencher ?? false) : false,
-        founder_featured_badge: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.featured_badge_id ?? null) : null,
-      }));
+      const enriched = benchData.map(b => {
+        const profile = b.founding_user_id ? profileMap.get(b.founding_user_id) : null;
+        const badge = profile?.featured_badge_id
+          ?? BADGE_PRIORITY.find(bp => profile?.earned_badges.includes(bp))
+          ?? null;
+        return {
+          ...b,
+          founder_username: profile?.username ?? null,
+          founder_is_founding_bencher: profile?.is_founding_bencher ?? false,
+          founder_featured_badge: badge,
+        };
+      });
 
       if (userLocation) {
         setBenches(enriched.map(bench => ({
