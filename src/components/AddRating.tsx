@@ -6,12 +6,19 @@ import { useAchievements } from '../hooks/useAchievements';
 
 interface AddRatingProps {
   benchId: string;
-  foundingUserId?: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
-export function AddRating({ benchId, foundingUserId, onClose, onSuccess }: AddRatingProps) {
+const RATING_LABELS: Record<number, string> = {
+  1: 'Barely better than the ground.',
+  2: "It'll do in a pinch.",
+  3: 'Solid bench, no complaints.',
+  4: 'Worth going out of your way for.',
+  5: 'Drop everything. Find this bench.',
+};
+
+export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
   const { session } = useAuth();
   const { triggerAchievementCheck } = useAchievements();
   const [overallRating, setOverallRating] = useState(0);
@@ -55,12 +62,17 @@ export function AddRating({ benchId, foundingUserId, onClose, onSuccess }: AddRa
 
       if (insertError) throw insertError;
 
-      // Notify the founding user if someone else rated their bench
-      if (foundingUserId && foundingUserId !== session?.user?.id) {
+      // Notify the bench founder (if different from the rater)
+      const { data: benchData } = await supabase
+        .from('benches')
+        .select('founding_user_id')
+        .eq('id', benchId)
+        .maybeSingle();
+      if (benchData?.founding_user_id && benchData.founding_user_id !== session.user.id) {
         await supabase.from('bench_notifications').insert({
-          user_id: foundingUserId,
+          user_id: benchData.founding_user_id,
           bench_id: benchId,
-          actor_id: session?.user?.id,
+          actor_id: session.user.id,
           type: 'rating',
         });
       }
@@ -144,13 +156,20 @@ export function AddRating({ benchId, foundingUserId, onClose, onSuccess }: AddRa
           </div>
 
           <form onSubmit={handleSubmit} className="p-4 space-y-4">
-            <RatingButtons
-              value={overallRating}
-              onChange={setOverallRating}
-              label="Overall Rating"
-              icon="⭐"
-              required={true}
-            />
+            <div>
+              <RatingButtons
+                value={overallRating}
+                onChange={setOverallRating}
+                label="Overall Rating"
+                icon="⭐"
+                required={true}
+              />
+              {overallRating > 0 && (
+                <p className="mt-2 text-sm font-medium text-green-700 transition-opacity duration-150">
+                  {RATING_LABELS[overallRating]}
+                </p>
+              )}
+            </div>
 
             <RatingButtons
               value={comfort}
