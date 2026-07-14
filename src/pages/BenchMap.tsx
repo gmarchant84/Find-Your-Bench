@@ -64,7 +64,7 @@ function saveMapState(state: SavedMapState) {
 }
 
 export default function BenchMap() {
-  const { session, isAdmin } = useAuth();
+  const { session, isAdmin, currentStreak, refreshStreak } = useAuth();
   const navigate = useNavigate();
   const [benches, setBenches] = useState<BenchWithDistance[]>([]);
   const [filteredBenches, setFilteredBenches] = useState<BenchWithDistance[]>([]);
@@ -287,6 +287,7 @@ export default function BenchMap() {
 
     fetchBenches();
     checkIfNewUser();
+    refreshStreak();
   };
 
   const handleShowNearby = () => {
@@ -429,6 +430,7 @@ export default function BenchMap() {
         selectedCategory={selectedCategory}
         selectedLocationType={selectedLocationType}
         isLoggedIn={!!session}
+        streak={currentStreak}
         onViewModeChange={setViewMode}
         onShowLeaderboard={() => setShowLeaderboard(true)}
         onShowFilters={() => setShowFilters(!showFilters)}

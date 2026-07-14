@@ -71,7 +71,7 @@ function RatingButtons({
 }
 
 export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
-  const { session } = useAuth();
+  const { session, refreshStreak } = useAuth();
   const { triggerAchievementCheck } = useAchievements();
   const [overallRating, setOverallRating] = useState(0);
   const [comfort, setComfort] = useState(0);
@@ -134,6 +134,7 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
       }
 
       await triggerAchievementCheck();
+      await refreshStreak();
       onSuccess();
     } catch (err) {
       setError('Unable to submit rating. Please try again.');

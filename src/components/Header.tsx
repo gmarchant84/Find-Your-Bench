@@ -11,6 +11,7 @@ interface HeaderProps {
   selectedCategory: string;
   selectedLocationType: string;
   isLoggedIn: boolean;
+  streak?: number;
   onViewModeChange: (mode: 'map' | 'list') => void;
   onShowLeaderboard: () => void;
   onShowFilters: () => void;
@@ -32,6 +33,7 @@ export default function Header({
   userLocation,
   selectedCategory,
   isLoggedIn,
+  streak = 0,
   onViewModeChange,
   onShowLeaderboard,
   onShowFilters,
@@ -81,6 +83,11 @@ export default function Header({
           </button>
           {isLoggedIn ? (
             <div className="flex items-center gap-1.5">
+              {streak > 0 && (
+                <div className="flex items-center gap-0.5 px-2 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-bold text-orange-600">
+                  🔥{streak}
+                </div>
+              )}
               <NotificationBell />
               <button
                 onClick={onShowProfile}

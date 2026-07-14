@@ -6,6 +6,8 @@ interface AuthContextType {
   session: Session | null;
   loading: boolean;
   isAdmin: boolean;
+  currentStreak: number;
+  refreshStreak: () => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -17,14 +19,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   const fetchAdminStatus = async (userId: string) => {
     const { data } = await supabase
       .from('profiles')
-      .select('is_admin')
+      .select('is_admin, current_streak')
       .eq('id', userId)
       .maybeSingle();
     setIsAdmin(data?.is_admin === true);
+    setCurrentStreak(data?.current_streak ?? 0);
+  };
+
+  const refreshStreak = async () => {
+    if (!session?.user) return;
+    const { data } = await supabase
+      .from('profiles')
+      .select('current_streak')
+      .eq('id', session.user.id)
+      .maybeSingle();
+    setCurrentStreak(data?.current_streak ?? 0);
   };
 
   useEffect(() => {
@@ -41,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           fetchAdminStatus(session.user.id);
         } else {
           setIsAdmin(false);
+          setCurrentStreak(0);
         }
         setLoading(false);
       })();
@@ -73,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <AuthContext.Provider value={{ session, loading, isAdmin, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ session, loading, isAdmin, currentStreak, refreshStreak, signUp, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );
