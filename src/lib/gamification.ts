@@ -123,12 +123,14 @@ async function checkAndUnlockAchievements(userId: string, stats: any) {
           shouldUnlock = stats.benches_added >= achievement.requirement_value;
           break;
         case 'ratings_given':
+        case 'reviews_written':
           shouldUnlock = stats.ratings_given >= achievement.requirement_value;
           break;
         case 'photos_uploaded':
           shouldUnlock = stats.photos_uploaded >= achievement.requirement_value;
           break;
         case 'current_streak':
+        case 'streak_days':
           shouldUnlock = stats.current_streak >= achievement.requirement_value;
           break;
         case 'level':
