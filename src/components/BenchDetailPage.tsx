@@ -756,7 +756,6 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
                   {founderFeaturedBadge && (
                     <span className="text-base" title={founderFeaturedBadge}>{BADGE_ICONS[founderFeaturedBadge] ?? ''}</span>
                   )}
-                  {founderIsFoundingBencher && <FoundingBencherBadge size="xs" />}
                 </div>
               </div>
             )}
