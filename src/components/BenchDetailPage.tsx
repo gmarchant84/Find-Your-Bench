@@ -14,6 +14,23 @@ import SaveToListModal from './SaveToListModal';
 import ImageLightbox from './ImageLightbox';
 import AuthPromptModal from './AuthPromptModal';
 
+const BADGE_ICONS: Record<string, string> = {
+  seedling: '🌱',
+  groundskeeper: '🪑',
+  scout: '🗺️',
+  trail_blazer: '🏕️',
+  park_ranger: '🌳',
+  bench_legend: '🏆',
+  critic: '✍️',
+  connoisseur: '🔍',
+  the_reviewer: '📜',
+  on_a_roll: '🔥',
+  unstoppable: '⚡',
+  bench_obsessed: '💎',
+  perma_bencher: '🌟',
+  the_benchfather: '👑',
+};
+
 interface VerificationSectionProps {
   bench: { verification_status?: string; confirmation_count?: number; photos?: string[] | null };
   userConfirmations: { exists: boolean; removed: boolean };
@@ -263,6 +280,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const [benchLists, setBenchLists] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [founderUsername, setFounderUsername] = useState<string | null>(initialFounderUsername ?? null);
   const [founderIsFoundingBencher, setFounderIsFoundingBencher] = useState<boolean>(initialFounderIsFoundingBencher ?? false);
+  const [founderFeaturedBadge, setFounderFeaturedBadge] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
   const [photoGalleryKey, setPhotoGalleryKey] = useState(0);
@@ -280,10 +298,11 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
     reverseGeocode();
     fetchPrimaryPhoto();
     if (bench.founding_user_id && !initialFounderUsername) {
-      supabase.from('profiles').select('username, is_founding_bencher').eq('id', bench.founding_user_id).maybeSingle().then(({ data }) => {
+      supabase.from('profiles').select('username, is_founding_bencher, featured_badge_id').eq('id', bench.founding_user_id).maybeSingle().then(({ data }) => {
         if (data) {
           setFounderUsername(data.username ?? null);
           setFounderIsFoundingBencher(data.is_founding_bencher ?? false);
+          setFounderFeaturedBadge(data.featured_badge_id ?? null);
         }
       });
     }
@@ -691,6 +710,9 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
                 <div className="flex items-center gap-1.5 flex-wrap min-w-0">
                   <span className="text-sm text-amber-800">Added by</span>
                   <span className="text-sm font-bold text-amber-900">@{founderUsername}</span>
+                  {founderFeaturedBadge && (
+                    <span className="text-base" title={founderFeaturedBadge}>{BADGE_ICONS[founderFeaturedBadge] ?? ''}</span>
+                  )}
                   {founderIsFoundingBencher && <FoundingBencherBadge size="xs" />}
                 </div>
               </div>

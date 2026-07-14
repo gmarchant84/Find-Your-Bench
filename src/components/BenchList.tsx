@@ -2,6 +2,23 @@ import { Star, Navigation, Camera, MapPin } from 'lucide-react';
 import { DistanceUnit, formatDistance } from '../lib/distance';
 import FoundingBencherBadge from './FoundingBencherBadge';
 
+const BADGE_ICONS: Record<string, string> = {
+  seedling: '🌱',
+  groundskeeper: '🪑',
+  scout: '🗺️',
+  trail_blazer: '🏕️',
+  park_ranger: '🌳',
+  bench_legend: '🏆',
+  critic: '✍️',
+  connoisseur: '🔍',
+  the_reviewer: '📜',
+  on_a_roll: '🔥',
+  unstoppable: '⚡',
+  bench_obsessed: '💎',
+  perma_bencher: '🌟',
+  the_benchfather: '👑',
+};
+
 interface Bench {
   id: string;
   name: string;
@@ -18,6 +35,7 @@ interface Bench {
   total_ratings?: number;
   founder_username?: string | null;
   founder_is_founding_bencher?: boolean;
+  founder_featured_badge?: string | null;
 }
 
 interface BenchListProps {
@@ -158,6 +176,9 @@ export default function BenchList({
                 <div className="flex items-center gap-1.5 mt-2 pt-2 border-t border-gray-100">
                   <span className="text-xs text-gray-400">Added by</span>
                   <span className="text-xs font-semibold text-gray-700">@{bench.founder_username}</span>
+                  {bench.founder_featured_badge && (
+                    <span className="text-sm" title={bench.founder_featured_badge}>{BADGE_ICONS[bench.founder_featured_badge] ?? ''}</span>
+                  )}
                   {bench.founder_is_founding_bencher && (
                     <FoundingBencherBadge size="xs" showLabel={false} />
                   )}

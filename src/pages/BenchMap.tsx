@@ -32,6 +32,7 @@ interface Bench {
   is_hidden?: boolean;
   founder_username?: string | null;
   founder_is_founding_bencher?: boolean;
+  founder_featured_badge?: string | null;
 }
 
 interface BenchWithDistance extends Bench {
@@ -239,19 +240,20 @@ export default function BenchMap() {
 
       // Fetch founder profiles in a single query
       const founderIds = [...new Set(benchData.map(b => b.founding_user_id).filter(Boolean))] as string[];
-      let profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean }>();
+      let profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean; featured_badge_id: string | null }>();
       if (founderIds.length > 0) {
         const { data: profiles } = await supabase
           .from('profiles')
-          .select('id, username, is_founding_bencher')
+          .select('id, username, is_founding_bencher, featured_badge_id')
           .in('id', founderIds);
-        (profiles ?? []).forEach(p => profileMap.set(p.id, { username: p.username ?? null, is_founding_bencher: p.is_founding_bencher ?? false }));
+        (profiles ?? []).forEach(p => profileMap.set(p.id, { username: p.username ?? null, is_founding_bencher: p.is_founding_bencher ?? false, featured_badge_id: p.featured_badge_id ?? null }));
       }
 
       const enriched = benchData.map(b => ({
         ...b,
         founder_username: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.username ?? null) : null,
         founder_is_founding_bencher: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.is_founding_bencher ?? false) : false,
+        founder_featured_badge: b.founding_user_id ? (profileMap.get(b.founding_user_id)?.featured_badge_id ?? null) : null,
       }));
 
       if (userLocation) {
