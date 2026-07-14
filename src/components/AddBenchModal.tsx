@@ -58,7 +58,7 @@ async function compressImage(file: File, maxPx = 1600, quality = 0.82): Promise<
 }
 
 const STEP_ORDER: Step[] = ['location', 'details', 'review'];
-const STEP_LABELS = ['Location & Photo', 'Details', 'Review'];
+const STEP_LABELS = ['Location', 'Details', 'Review'];
 
 function StepIndicator({ step }: { step: Step }) {
   if (step === 'success') return null;
@@ -94,7 +94,13 @@ function StarRating({ value, onChange, hovered, onHover, onLeave }: {
   onLeave: () => void;
 }) {
   const display = hovered || value;
-  const labels = ['', 'Poor', 'Fair', 'Good', 'Great', 'Amazing'];
+  const labels: Record<number, string> = {
+    1: 'Barely better than the ground.',
+    2: "It'll do in a pinch.",
+    3: 'Solid bench, no complaints.',
+    4: 'Worth going out of your way for.',
+    5: 'Drop everything. Find this bench.',
+  };
   return (
     <div className="flex flex-col items-center gap-3">
       <div className="flex gap-2">
@@ -118,7 +124,7 @@ function StarRating({ value, onChange, hovered, onHover, onLeave }: {
           </button>
         ))}
       </div>
-      <span className={`text-sm font-semibold h-5 ${display ? 'text-amber-600' : 'text-gray-400'}`}>
+      <span className={`text-sm font-medium h-5 transition-opacity duration-150 ${display ? 'text-green-700' : 'text-gray-400'}`}>
         {display ? labels[display] : 'Tap to rate'}
       </span>
     </div>
@@ -147,7 +153,6 @@ export default function AddBenchModal({
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
   const [vibe, setVibe] = useState<VibeCategory | null>(null);
-  const [tags, setTags] = useState<string[]>([]);
   const [pendingPhotos, setPendingPhotos] = useState<PendingPhoto[]>([]);
   const [isProcessingPhoto, setIsProcessingPhoto] = useState(false);
 
@@ -298,7 +303,6 @@ export default function AddBenchModal({
         longitude: lng,
         description: description.trim() || null,
         photos: uploadedPhotos.length > 0 ? uploadedPhotos.map(p => p.url) : null,
-        tags: tags.length > 0 ? tags : null,
         vibe_category: vibe ?? null,
         founding_user_id: userId,
         original_name: finalName,
@@ -384,7 +388,6 @@ export default function AddBenchModal({
     setName('');
     setDescription('');
     setVibe(null);
-    setTags([]);
     setPendingPhotos([]);
     setOverallRating(0);
     setHoveredRating(0);
@@ -406,7 +409,7 @@ export default function AddBenchModal({
           <div className="flex items-center justify-between mb-1">
             <h2 className="text-lg font-bold text-gray-900">
               {step === 'success' ? 'Bench Added!' :
-               step === 'location' ? 'Step 1: Location & Photo' :
+               step === 'location' ? 'Step 1: Location' :
                step === 'details' ? 'Step 2: Details' :
                'Step 3: Rate It'}
             </h2>
@@ -494,47 +497,6 @@ export default function AddBenchModal({
                 )}
               </div>
 
-              {/* Photo upload — best taken while standing at the bench */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Add a photo <span className="text-gray-400 font-normal">(optional — take one now while you're here!)</span>
-                </label>
-                {pendingPhotos.length > 0 && (
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    {pendingPhotos.map((photo, i) => (
-                      <div key={i} className="relative aspect-square group">
-                        <img src={photo.preview} alt="" className="w-full h-full object-cover rounded-xl border-2 border-gray-100" />
-                        <button
-                          type="button"
-                          onClick={() => setPendingPhotos(prev => prev.filter((_, idx) => idx !== i))}
-                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
-                        >
-                          <X className="w-3 h-3 text-white" />
-                        </button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                <div className="flex gap-2">
-                  <button
-                    type="button" onClick={() => cameraInputRef.current?.click()} disabled={isProcessingPhoto}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
-                    Camera
-                  </button>
-                  <button
-                    type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessingPhoto}
-                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
-                  >
-                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-                    Upload
-                  </button>
-                </div>
-                <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden" onChange={handlePhotoInput} />
-                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePhotoInput} />
-              </div>
-
               {nearbyBenches.length > 0 && (
                 <div className="bg-amber-50 border border-amber-200 rounded-xl p-4">
                   <div className="flex items-start gap-2 mb-2">
@@ -599,30 +561,42 @@ export default function AddBenchModal({
 
               <div>
                 <label className="block text-sm font-semibold text-gray-800 mb-1.5">
-                  Tags <span className="text-gray-400 font-normal">(optional — pick all that apply)</span>
+                  Photos <span className="text-gray-400 font-normal">(optional)</span>
                 </label>
-                <div className="flex flex-wrap gap-2">
-                  {[
-                    { id: 'scenic', label: 'Scenic View' },
-                    { id: 'quiet', label: 'Quiet' },
-                    { id: 'sunny', label: 'Sunny' },
-                    { id: 'shady', label: 'Shady' },
-                    { id: 'lunch', label: 'Good for Lunch' },
-                    { id: 'people-watching', label: 'People Watching' },
-                  ].map(tag => (
-                    <button
-                      key={tag.id} type="button"
-                      onClick={() => setTags(prev => prev.includes(tag.id) ? prev.filter(t => t !== tag.id) : [...prev, tag.id])}
-                      className={`px-3 py-1.5 rounded-full text-sm font-medium border-2 transition ${
-                        tags.includes(tag.id)
-                          ? 'bg-green-100 text-green-800 border-green-400'
-                          : 'bg-white text-gray-600 border-gray-200 hover:border-gray-300'
-                      }`}
-                    >
-                      {tag.label}
-                    </button>
-                  ))}
+                {pendingPhotos.length > 0 && (
+                  <div className="grid grid-cols-3 gap-2 mb-2">
+                    {pendingPhotos.map((photo, i) => (
+                      <div key={i} className="relative aspect-square group">
+                        <img src={photo.preview} alt="" className="w-full h-full object-cover rounded-xl border-2 border-gray-100" />
+                        <button
+                          type="button"
+                          onClick={() => setPendingPhotos(prev => prev.filter((_, idx) => idx !== i))}
+                          className="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                        >
+                          <X className="w-3 h-3 text-white" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <button
+                    type="button" onClick={() => cameraInputRef.current?.click()} disabled={isProcessingPhoto}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
+                  >
+                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Camera className="w-4 h-4" />}
+                    Camera
+                  </button>
+                  <button
+                    type="button" onClick={() => fileInputRef.current?.click()} disabled={isProcessingPhoto}
+                    className="flex-1 py-3 border-2 border-dashed border-gray-300 hover:border-green-400 rounded-xl flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-green-600 transition bg-gray-50 hover:bg-green-50 disabled:opacity-50"
+                  >
+                    {isProcessingPhoto ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
+                    Upload
+                  </button>
                 </div>
+                <input ref={cameraInputRef} type="file" accept="image/jpeg,image/png,image/webp" capture="environment" multiple className="hidden" onChange={handlePhotoInput} />
+                <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={handlePhotoInput} />
               </div>
 
               <div>
@@ -664,7 +638,7 @@ export default function AddBenchModal({
                 <textarea
                   value={reviewText} onChange={(e) => setReviewText(e.target.value)}
                   className="w-full px-4 py-3 bg-white border-2 border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-500 transition resize-none text-sm"
-                  placeholder="What makes this bench special?"
+                  placeholder="Tell others about your experience..."
                   rows={4} maxLength={1000}
                 />
                 <p className="text-xs text-gray-400 text-right mt-1">{reviewText.length}/1000</p>
