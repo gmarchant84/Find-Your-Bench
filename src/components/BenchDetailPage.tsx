@@ -303,7 +303,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
     fetchBenchLists();
     reverseGeocode();
     fetchPrimaryPhoto();
-    if (bench.founding_user_id && !initialFounderUsername) {
+    if (bench.founding_user_id) {
       Promise.all([
         supabase.from('profiles').select('username, is_founding_bencher, featured_badge_id').eq('id', bench.founding_user_id).maybeSingle(),
         supabase.from('user_achievement_unlocks').select('achievement_id').eq('user_id', bench.founding_user_id),
