@@ -18,6 +18,58 @@ const RATING_LABELS: Record<number, string> = {
   5: 'Drop everything. Find this bench.',
 };
 
+function RatingButtons({
+  value,
+  onChange,
+  label,
+  icon,
+  required = false
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  label: string;
+  icon?: string;
+  required?: boolean;
+}) {
+  return (
+    <div>
+      <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
+        {icon && <span className="text-xl">{icon}</span>}
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+        {!required && <span className="text-xs text-gray-500 ml-auto font-normal">(optional)</span>}
+      </label>
+      <div className="flex gap-2 relative z-20">
+        {[1, 2, 3, 4, 5].map((num) => {
+          const isActive = num === value;
+          return (
+            <button
+              key={num}
+              type="button"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onChange(num);
+              }}
+              onPointerDown={(e) => {
+                e.preventDefault();
+                onChange(num);
+              }}
+              className={`flex-1 h-12 rounded-lg font-bold text-lg transition-all cursor-pointer relative z-30 touch-none select-none ${
+                isActive
+                  ? 'bg-green-600 text-white shadow-lg scale-105'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
+              }`}
+            >
+              {num}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
   const { session } = useAuth();
   const { triggerAchievementCheck } = useAchievements();
@@ -48,7 +100,7 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
         .from('ratings')
         .upsert({
           bench_id: benchId,
-          user_id: session?.user?.id,
+          user_id: session.user.id,
           comfort: comfort || null,
           tranquility: tranquility || null,
           people_watching: peopleWatching || null,
@@ -62,19 +114,23 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
 
       if (insertError) throw insertError;
 
-      // Notify the bench founder (if different from the rater)
-      const { data: benchData } = await supabase
-        .from('benches')
-        .select('founding_user_id')
-        .eq('id', benchId)
-        .maybeSingle();
-      if (benchData?.founding_user_id && benchData.founding_user_id !== session.user.id) {
-        await supabase.from('bench_notifications').insert({
-          user_id: benchData.founding_user_id,
-          bench_id: benchId,
-          actor_id: session.user.id,
-          type: 'rating',
-        });
+      // Notify the bench founder (if different from the rater) — non-blocking
+      try {
+        const { data: benchData } = await supabase
+          .from('benches')
+          .select('founding_user_id')
+          .eq('id', benchId)
+          .maybeSingle();
+        if (benchData?.founding_user_id && benchData.founding_user_id !== session.user.id) {
+          await supabase.from('bench_notifications').insert({
+            user_id: benchData.founding_user_id,
+            bench_id: benchId,
+            actor_id: session.user.id,
+            type: 'rating',
+          });
+        }
+      } catch {
+        // Notification failure should not block the rating submission
       }
 
       await triggerAchievementCheck();
@@ -84,58 +140,6 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const RatingButtons = ({
-    value,
-    onChange,
-    label,
-    icon,
-    required = false
-  }: {
-    value: number;
-    onChange: (v: number) => void;
-    label: string;
-    icon?: string;
-    required?: boolean;
-  }) => {
-    return (
-      <div>
-        <label className="flex items-center gap-2 text-sm font-semibold text-gray-700 mb-2">
-          {icon && <span className="text-xl">{icon}</span>}
-          {label}
-          {required && <span className="text-red-500 ml-1">*</span>}
-          {!required && <span className="text-xs text-gray-500 ml-auto font-normal">(optional)</span>}
-        </label>
-        <div className="flex gap-2 relative z-20">
-          {[1, 2, 3, 4, 5].map((num) => {
-            const isActive = num === value;
-            return (
-              <button
-                key={num}
-                type="button"
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onChange(num);
-                }}
-                onPointerDown={(e) => {
-                  e.preventDefault();
-                  onChange(num);
-                }}
-                className={`flex-1 h-12 rounded-lg font-bold text-lg transition-all cursor-pointer relative z-30 touch-none select-none ${
-                  isActive
-                    ? 'bg-green-600 text-white shadow-lg scale-105'
-                    : 'bg-gray-200 text-gray-700 hover:bg-gray-300 active:bg-gray-400'
-                }`}
-              >
-                {num}
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    );
   };
 
   return (
