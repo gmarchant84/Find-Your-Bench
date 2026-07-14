@@ -546,7 +546,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const handleTouchEnd = (e: React.TouchEvent) => {
     if (touchStartY.current === null) return;
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
-    if (deltaY > 80 && containerRef.current?.scrollTop === 0) onBack();
+    if (deltaY > 150 && containerRef.current?.scrollTop === 0) onBack();
     touchStartY.current = null;
   };
 
