@@ -18,7 +18,7 @@ interface VerificationSectionProps {
   bench: { verification_status?: string; confirmation_count?: number; photos?: string[] | null };
   userConfirmations: { exists: boolean; removed: boolean };
   saveMessage: string | null;
-  ratings: { id: string }[];
+  ratings: { id: string; user_id: string }[];
   onConfirmation: (type: 'exists' | 'removed') => void;
   onReview: () => void;
   session: Session | null;
@@ -138,7 +138,7 @@ function VerificationSection({ bench, userConfirmations, saveMessage, ratings, o
             <ThumbsUp className="w-4 h-4" />
             Still Here
           </button>
-          {!ratings.length && (
+          {!ratings.some(r => r.user_id === session?.user?.id) && (
             <button
               onClick={onReview}
               className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-white text-gray-700 border border-gray-200 hover:border-amber-400 rounded-xl font-semibold transition btn-press text-sm"
@@ -171,7 +171,7 @@ function VerificationSection({ bench, userConfirmations, saveMessage, ratings, o
       )}
 
       {/* Write a review CTA when verified and has no reviews yet */}
-      {isVerified && ratings.length === 0 && session && (
+      {isVerified && !ratings.some(r => r.user_id === session?.user?.id) && session && (
         <button
           onClick={onReview}
           className="w-full flex items-center justify-center gap-2 py-2.5 bg-white text-gray-700 border border-gray-200 hover:border-amber-400 rounded-xl font-semibold transition btn-press text-sm"
