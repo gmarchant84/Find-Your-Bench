@@ -15,7 +15,7 @@ const BADGE_ICONS: Record<string, string> = {
   unstoppable: '⚡',
   bench_obsessed: '💎',
   perma_bencher: '🌟',
-  the_benchfather: '👑',
+  the_benchfather: '🫎',
 };
 
 interface Bench {
