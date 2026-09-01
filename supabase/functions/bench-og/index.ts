@@ -8,7 +8,7 @@ const corsHeaders = {
 };
 
 const APP_URL = "https://findyourbench.app";
-const DEFAULT_OG_IMAGE = `${APP_URL}/fyb-logo.png`;
+const DEFAULT_OG_IMAGE = `${APP_URL}/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png`;
 const SITE_NAME = "Find Your Bench";
 
 function escapeHtml(s: string): string {
@@ -74,11 +74,7 @@ function isCrawler(req: Request): boolean {
     ua.includes("applebot") ||
     ua.includes("googlebot") ||
     ua.includes("bingbot") ||
-    ua.includes("imessage") ||
-    ua.includes("iMessage") ||
-    // iMessage link preview uses this
     ua.includes("dataaccessd") ||
-    ua.includes("imessage") ||
     ua.includes("messages/") ||
     ua.includes("preview")
   );
@@ -94,13 +90,6 @@ Deno.serve(async (req: Request) => {
     const id = url.searchParams.get("id");
 
     if (!id) {
-      // Non-crawlers just go to the app
-      if (!isCrawler(req)) {
-        return new Response(null, {
-          status: 302,
-          headers: { ...corsHeaders, Location: APP_URL },
-        });
-      }
       return new Response(
         buildHtml({
           url: APP_URL,
@@ -124,13 +113,6 @@ Deno.serve(async (req: Request) => {
       .maybeSingle();
 
     if (!bench) {
-      // No bench found — send users to app, crawlers get a 404 page
-      if (!isCrawler(req)) {
-        return new Response(null, {
-          status: 302,
-          headers: { ...corsHeaders, Location: APP_URL },
-        });
-      }
       return new Response(
         buildHtml({
           url: APP_URL,
@@ -144,7 +126,6 @@ Deno.serve(async (req: Request) => {
 
     const benchUrl = `${APP_URL}/bench/${bench.id}`;
 
-    // Real users get a direct 302 to the bench page — no HTML needed
     if (!isCrawler(req)) {
       return new Response(null, {
         status: 302,
@@ -152,26 +133,18 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Crawlers get the full OG HTML
     const title = `${bench.name} | ${SITE_NAME}`;
+
     const description = bench.description
       ? bench.description.length > 120
         ? bench.description.slice(0, 117) + "…"
         : bench.description
       : `Discover this bench on ${SITE_NAME}.`;
 
-    let image = DEFAULT_OG_IMAGE;
-    const { data: primaryPhoto } = await supabase
-      .from("bench_photos")
-      .select("photo_url")
-      .eq("bench_id", bench.id)
-      .eq("is_primary", true)
-      .maybeSingle();
-    if (primaryPhoto?.photo_url) {
-      image = primaryPhoto.photo_url;
-    } else if (Array.isArray(bench.photos) && bench.photos.length > 0) {
-      image = bench.photos[0];
-    }
+    const image =
+      Array.isArray(bench.photos) && bench.photos.length > 0
+        ? bench.photos[0]
+        : DEFAULT_OG_IMAGE;
 
     const html = buildHtml({ url: benchUrl, title, description, image });
 
