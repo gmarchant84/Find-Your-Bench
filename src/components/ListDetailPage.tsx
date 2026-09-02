@@ -3,6 +3,7 @@ import { ArrowLeft, X, Trash2, Star, MapPin, Pencil, Check, Loader2 } from 'luci
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { calculateDistance, formatDistance } from '../lib/distance';
+import { SignedPhotoImg } from '../lib/photos';
 
 interface Bench {
   id: string;
@@ -301,7 +302,7 @@ export default function ListDetailPage({ listId, onClose, onBenchClick, distance
                   onClick={() => onBenchClick(bench.id)}
                 >
                   {bench.photos && bench.photos.length > 0 ? (
-                    <img
+                    <SignedPhotoImg
                       src={bench.photos[0]}
                       alt={bench.name}
                       className="w-14 h-14 object-cover rounded-lg flex-shrink-0"

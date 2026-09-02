@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { X, MapPin, Star, MessageSquare, Loader2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import FoundingBencherBadge from './FoundingBencherBadge';
+import { SignedPhotoImg } from '../lib/photos';
 
 interface Bench {
   id: string;
@@ -143,7 +144,7 @@ export default function PublicProfileModal({ userId, displayName, onClose, onBen
                     className={`w-full flex items-center gap-3 p-3 bg-gray-50 border border-gray-100 rounded-xl text-left transition ${onBenchClick ? 'hover:bg-green-50 hover:border-green-200 active:bg-green-100 cursor-pointer' : 'cursor-default'}`}
                   >
                     {bench.photos && bench.photos.length > 0 ? (
-                      <img src={bench.photos[0]} alt={bench.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+                      <SignedPhotoImg src={bench.photos[0]} alt={bench.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
                     ) : (
                       <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                         <MapPin className="w-5 h-5 text-green-500" />

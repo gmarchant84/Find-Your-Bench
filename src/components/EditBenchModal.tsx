@@ -1,6 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Save, Camera, Upload, Loader2 } from 'lucide-react';
 import { supabase, friendlyError } from '../lib/supabase';
+import { SignedPhotoImg } from '../lib/photos';
 import { useAuth } from '../context/AuthContext';
 
 interface Bench {
@@ -91,8 +92,7 @@ export default function EditBenchModal({ bench, onClose, onSaved }: EditBenchMod
         .from('bench-photos')
         .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
       if (storageError) throw storageError;
-      const { data: urlData } = supabase.storage.from('bench-photos').getPublicUrl(storageData.path);
-      setPhotoUrls(prev => [...prev, urlData.publicUrl]);
+      setPhotoUrls(prev => [...prev, storageData.path]);
     } catch (err: any) {
       setError(friendlyError(err, 'Photo upload failed. Please try again.'));
     } finally {
@@ -220,7 +220,7 @@ export default function EditBenchModal({ bench, onClose, onSaved }: EditBenchMod
             <div className="space-y-2 mb-3">
               {photoUrls.map((url, i) => (
                 <div key={i} className="flex items-center gap-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
-                  <img src={url} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }} />
+                  <SignedPhotoImg src={url} alt="" className="w-10 h-10 object-cover rounded flex-shrink-0" onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }} />
                   <span className="flex-1 text-xs text-gray-600 truncate">{url}</span>
                   <button
                     type="button" onClick={() => removePhoto(i)}

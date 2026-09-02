@@ -1,5 +1,6 @@
 import { Star, Navigation, Camera, MapPin } from 'lucide-react';
 import { DistanceUnit, formatDistance } from '../lib/distance';
+import { SignedPhotoImg } from '../lib/photos';
 
 const BADGE_ICONS: Record<string, string> = {
   seedling: '🌱',
@@ -102,7 +103,7 @@ export default function BenchList({
           >
             {hasPhoto ? (
               <div className="relative">
-                <img
+                <SignedPhotoImg
                   src={bench.photos![0]}
                   alt={bench.name}
                   className="w-full h-44 object-cover"

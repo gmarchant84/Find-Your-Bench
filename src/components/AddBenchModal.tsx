@@ -282,8 +282,7 @@ export default function AddBenchModal({
           .from('bench-photos')
           .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
         if (storageError) throw storageError;
-        const { data: urlData } = supabase.storage.from('bench-photos').getPublicUrl(storageData.path);
-        uploadedPhotos.push({ url: urlData.publicUrl });
+        uploadedPhotos.push({ url: storageData.path });
       } catch (err: any) {
         setErrorMessage(friendlyError(err, 'Photo upload failed. Please try again.'));
         submittingRef.current = false;

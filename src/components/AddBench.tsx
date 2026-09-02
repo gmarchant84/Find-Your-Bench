@@ -220,11 +220,7 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
 
         if (storageError) throw storageError;
 
-        const { data: urlData } = supabase.storage
-          .from('bench-photos')
-          .getPublicUrl(storageData.path);
-
-        photoUrls = [urlData.publicUrl];
+        photoUrls = [storageData.path];
       }
 
       const { data, error: insertError } = await supabase
