@@ -106,6 +106,11 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_ANON_KEY")!
     );
 
+    const admin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
+    );
+
     const { data: bench } = await supabase
       .from("benches")
       .select("id, name, description, photos, latitude, longitude")
@@ -141,10 +146,25 @@ Deno.serve(async (req: Request) => {
         : bench.description
       : `Discover this bench on ${SITE_NAME}.`;
 
-    const image =
-      Array.isArray(bench.photos) && bench.photos.length > 0
-        ? bench.photos[0]
-        : DEFAULT_OG_IMAGE;
+    // The photo bucket is private: swap stored photo URLs for short-lived
+    // signed URLs so social crawlers can fetch the og:image. External seed
+    // photos (e.g. pexels) pass through unchanged.
+    let image = DEFAULT_OG_IMAGE;
+    const raw = Array.isArray(bench.photos) && bench.photos.length > 0
+      ? bench.photos[0]
+      : null;
+    if (raw) {
+      const marker = "/storage/v1/object/public/bench-photos/";
+      if (raw.includes(marker)) {
+        const photoPath = raw.slice(raw.indexOf(marker) + marker.length);
+        const { data: signed } = await admin.storage
+          .from("bench-photos")
+          .createSignedUrl(photoPath, 3600);
+        if (signed?.signedUrl) image = signed.signedUrl;
+      } else {
+        image = raw;
+      }
+    }
 
     const html = buildHtml({ url: benchUrl, title, description, image });
 

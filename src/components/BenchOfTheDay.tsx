@@ -4,6 +4,7 @@ import { supabase } from '../lib/supabase';
 import SaveToListModal from './SaveToListModal';
 import FoundingBencherBadge from './FoundingBencherBadge';
 import { useAuth } from '../context/AuthContext';
+import { SignedPhotoImg } from '../lib/photos';
 
 interface BenchOfTheDayData {
   id: string;
@@ -126,7 +127,7 @@ export function BenchOfTheDay({ userLocation, onBenchClick }: BenchOfTheDayProps
           {/* Photo */}
           {bench.photo_url && (
             <div className="flex-shrink-0 w-24 h-24 rounded-lg overflow-hidden shadow-sm">
-              <img
+              <SignedPhotoImg
                 src={bench.photo_url}
                 alt={bench.name}
                 className="w-full h-full object-cover hover:scale-105 transition-transform duration-500"

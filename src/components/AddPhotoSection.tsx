@@ -160,11 +160,7 @@ export default function AddPhotoSection({ benchId, hasPhotos, foundingUserId, on
 
       if (storageError) throw storageError;
 
-      const { data: urlData } = supabase.storage
-        .from('bench-photos')
-        .getPublicUrl(storageData.path);
-
-      const photoUrl = urlData.publicUrl;
+      const photoUrl = storageData.path;
 
       // Insert into bench_photos table — user_id is always set (auth enforced above)
       const { error: insertError } = await supabase.from('bench_photos').insert({

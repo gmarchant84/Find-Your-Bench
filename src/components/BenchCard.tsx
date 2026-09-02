@@ -1,6 +1,7 @@
 import { Star, MapPin, Tag, Maximize2 } from 'lucide-react';
 import { useState } from 'react';
 import { Bench, getVibe, getLocationType } from '../lib/supabase';
+import { SignedPhotoImg, useSignedPhotoUrl } from '../lib/photos';
 import VerificationBadge from './VerificationBadge';
 import ImageLightbox from './ImageLightbox';
 
@@ -15,6 +16,7 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
   const vibe = getVibe(bench.vibe_category);
   const locType = getLocationType(bench.location_type);
   const [lightbox, setLightbox] = useState(false);
+  const firstPhotoUrl = useSignedPhotoUrl((bench.photos ?? [])[0] ?? null);
 
   return (
     <>
@@ -25,7 +27,7 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
         <div className="relative">
           {(bench.photos ?? []).length > 0 ? (
             <div className="relative w-full h-48 bg-gray-100 overflow-hidden">
-              <img
+              <SignedPhotoImg
                 src={(bench.photos ?? [])[0]}
                 alt={bench.name}
                 className="w-full h-full object-cover" style={{ objectPosition: 'center 65%' }}
@@ -127,9 +129,9 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
         </div>
       </div>
 
-      {lightbox && (
+      {lightbox && firstPhotoUrl && (
         <ImageLightbox
-          imageUrl={(bench.photos ?? [])[0]}
+          imageUrl={firstPhotoUrl}
           imageAlt={bench.name}
           onClose={() => setLightbox(false)}
         />

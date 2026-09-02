@@ -7,6 +7,7 @@ import ListDetailPage from './ListDetailPage';
 import BadgeDisplay from './BadgeDisplay';
 import FoundingBencherBadge from './FoundingBencherBadge';
 import { getUserAchievements, getAllAchievements, Achievement, UserAchievement } from '../lib/achievements';
+import { SignedPhotoImg } from '../lib/photos';
 
 interface Bench {
   id: string;
@@ -175,8 +176,7 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
           .from('bench-photos')
           .upload(path, avatarFile, { upsert: true });
         if (uploadError) throw uploadError;
-        const { data: { publicUrl } } = supabase.storage.from('bench-photos').getPublicUrl(path);
-        avatarUrl = publicUrl;
+        avatarUrl = path;
       }
 
       const { error } = await supabase.from('profiles').update({
@@ -304,7 +304,7 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
       onClick={onBenchClick ? () => { onBenchClick(bench.id); onClose(); } : undefined}
     >
       {bench.photos?.length ? (
-        <img src={bench.photos[0]} alt={bench.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
+        <SignedPhotoImg src={bench.photos[0]} alt={bench.name} className="w-12 h-12 object-cover rounded-lg flex-shrink-0" />
       ) : (
         <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
           <MapPin className="w-5 h-5 text-green-500" />
@@ -341,7 +341,7 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
               {/* Avatar */}
               <div className="relative flex-shrink-0">
                 {currentAvatar ? (
-                  <img src={currentAvatar} alt={displayName} className="w-10 h-10 rounded-full object-cover border-2 border-green-200" />
+                  <SignedPhotoImg src={currentAvatar} alt={displayName} className="w-10 h-10 rounded-full object-cover border-2 border-green-200" />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center border-2 border-green-200">
                     <span className="text-green-700 font-bold text-sm">{displayName[0]?.toUpperCase()}</span>
@@ -542,7 +542,7 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
             <div className="flex flex-col items-center gap-3">
               <div className="relative">
                 {currentAvatar ? (
-                  <img src={currentAvatar} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-green-100" />
+                  <SignedPhotoImg src={currentAvatar} alt="Avatar" className="w-20 h-20 rounded-full object-cover border-4 border-green-100" />
                 ) : (
                   <div className="w-20 h-20 rounded-full bg-green-100 flex items-center justify-center border-4 border-green-100">
                     <span className="text-green-700 font-bold text-2xl">{displayName[0]?.toUpperCase()}</span>

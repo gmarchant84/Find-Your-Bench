@@ -3,6 +3,7 @@ import { Camera, ThumbsUp, User } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAchievements } from '../hooks/useAchievements';
 import ImageLightbox from './ImageLightbox';
+import { SignedPhotoImg, useSignedPhotoUrl } from '../lib/photos';
 
 interface Photo {
   id: string;
@@ -46,6 +47,7 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
   const [loadError, setLoadError] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
+  const signedSelectedUrl = useSignedPhotoUrl(selectedPhoto?.photo_url);
 
   useEffect(() => {
     loadPhotos();
@@ -204,7 +206,7 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
               onPhotoClick?.(photo);
             }}
           >
-            <img
+            <SignedPhotoImg
               src={photo.photo_url}
               alt={photo.caption || 'Bench photo'}
               className="w-full h-full object-cover object-center transition-transform group-hover:scale-105"
@@ -240,9 +242,9 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
         ))}
       </div>
 
-      {selectedPhoto && (
+      {selectedPhoto && signedSelectedUrl && (
         <ImageLightbox
-          imageUrl={selectedPhoto.photo_url}
+          imageUrl={signedSelectedUrl}
           imageAlt={selectedPhoto.caption || 'Bench photo'}
           onClose={() => setSelectedPhoto(null)}
         />

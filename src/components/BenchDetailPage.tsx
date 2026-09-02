@@ -13,6 +13,7 @@ import PhotoGallery from './PhotoGallery';
 import SaveToListModal from './SaveToListModal';
 import ImageLightbox from './ImageLightbox';
 import AuthPromptModal from './AuthPromptModal';
+import { useSignedPhotoUrl } from '../lib/photos';
 
 const BADGE_ICONS: Record<string, string> = {
   seedling: '🌱',
@@ -291,6 +292,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
 
   const [photoGalleryKey, setPhotoGalleryKey] = useState(0);
   const [primaryPhotoUrl, setPrimaryPhotoUrl] = useState<string | null>(null);
+  const signedPrimaryPhotoUrl = useSignedPhotoUrl(primaryPhotoUrl);
   const [primaryPhotoLoaded, setPrimaryPhotoLoaded] = useState(false);
 
   const touchStartY = useRef<number | null>(null);
@@ -585,10 +587,10 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
           {primaryPhotoUrl && (
             <div
               className="relative w-full h-56 sm:h-72 bg-gray-100 overflow-hidden cursor-zoom-in"
-              onClick={() => setLightboxPhoto(primaryPhotoUrl)}
+              onClick={() => setLightboxPhoto(signedPrimaryPhotoUrl)}
             >
               <img
-                src={primaryPhotoUrl}
+                src={signedPrimaryPhotoUrl ?? undefined}
                 alt={bench.name}
                 className={`w-full h-full object-cover object-center transition-opacity duration-300 ${primaryPhotoLoaded ? 'opacity-100' : 'opacity-0'}`}
                 onLoad={() => setPrimaryPhotoLoaded(true)}

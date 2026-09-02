@@ -4,6 +4,7 @@ import { MapPin, Navigation, Star, X, ArrowRight, Map as MapIcon } from 'lucide-
 import { supabase, Bench, getVibe } from '../lib/supabase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
 import { calculateDistance, formatDistance, DistanceUnit } from '../lib/distance';
+import { SignedPhotoImg } from '../lib/photos';
 
 const NEARBY_RADIUS_METERS = 2000;
 
@@ -76,7 +77,7 @@ function MarkerWithRef({
       >
         {(bench.photos ?? []).length > 0 ? (
           <div className="w-12 h-12 rounded-full border-4 shadow-lg overflow-hidden" style={borderStyle}>
-            <img src={(bench.photos ?? [])[0]} alt={bench.name} className="w-full h-full object-cover"
+            <SignedPhotoImg src={(bench.photos ?? [])[0]} alt={bench.name} className="w-full h-full object-cover"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             />
           </div>
@@ -427,7 +428,7 @@ function MapContent({
             >
               {(popupBench.photos ?? []).length > 0 && (
                 <div className="w-full h-36 overflow-hidden">
-                  <img
+                  <SignedPhotoImg
                     src={(popupBench.photos ?? [])[0]}
                     alt={popupBench.name}
                     className="w-full h-full object-cover transition-transform duration-200 group-hover:scale-105"
