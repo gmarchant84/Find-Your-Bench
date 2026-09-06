@@ -292,7 +292,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
 
   const [photoGalleryKey, setPhotoGalleryKey] = useState(0);
   const [primaryPhotoUrl, setPrimaryPhotoUrl] = useState<string | null>(null);
-  const signedPrimaryPhotoUrl = useSignedPhotoUrl(primaryPhotoUrl);
+  const signedPrimaryPhotoUrl = useSignedPhotoUrl(primaryPhotoUrl, 'full');
   const [primaryPhotoLoaded, setPrimaryPhotoLoaded] = useState(false);
 
   const touchStartY = useRef<number | null>(null);

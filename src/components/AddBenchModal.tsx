@@ -7,6 +7,7 @@ import { supabase, BENCH_VIBES, VibeCategory, friendlyError } from '../lib/supab
 import { useAuth } from '../context/AuthContext';
 import { handleBenchAdded, handleRatingGiven } from '../lib/gamification';
 import { useAchievements } from '../hooks/useAchievements';
+import { uploadPhotoWithThumb } from '../lib/photos';
 
 interface AddBenchModalProps {
   onClose: () => void;
@@ -278,11 +279,8 @@ export default function AddBenchModal({
         const compressed = await compressImage(pending.file);
         const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const path = `${userId}/${filename}`;
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from('bench-photos')
-          .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
-        if (storageError) throw storageError;
-        uploadedPhotos.push({ url: storageData.path });
+        await uploadPhotoWithThumb(path, compressed);
+        uploadedPhotos.push({ url: path });
       } catch (err: any) {
         setErrorMessage(friendlyError(err, 'Photo upload failed. Please try again.'));
         submittingRef.current = false;

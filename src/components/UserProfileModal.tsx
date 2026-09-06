@@ -7,7 +7,7 @@ import ListDetailPage from './ListDetailPage';
 import BadgeDisplay from './BadgeDisplay';
 import FoundingBencherBadge from './FoundingBencherBadge';
 import { getUserAchievements, getAllAchievements, Achievement, UserAchievement } from '../lib/achievements';
-import { SignedPhotoImg } from '../lib/photos';
+import { SignedPhotoImg, useSignedPhotoUrl, uploadPhotoWithThumb } from '../lib/photos';
 
 interface Bench {
   id: string;
@@ -172,11 +172,10 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
       if (avatarFile) {
         const ext = avatarFile.name.split('.').pop();
         const path = `avatars/${session.user.id}.${ext}`;
-        const { error: uploadError } = await supabase.storage
-          .from('bench-photos')
-          .upload(path, avatarFile, { upsert: true });
-        if (uploadError) throw uploadError;
-        avatarUrl = path;
+        if (path) {
+          await uploadPhotoWithThumb(path, avatarFile, { upsert: true });
+          avatarUrl = path;
+        }
       }
 
       const { error } = await supabase.from('profiles').update({

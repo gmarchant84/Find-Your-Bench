@@ -2,6 +2,7 @@ import { useState, useRef, useCallback } from 'react';
 import { Camera, Upload, ImagePlus, X, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase, friendlyError } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
+import { uploadPhotoWithThumb } from '../lib/photos';
 
 interface AddPhotoSectionProps {
   benchId: string;
@@ -154,13 +155,9 @@ export default function AddPhotoSection({ benchId, hasPhotos, foundingUserId, on
       const filename = `${session.user.id}/${benchId}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
 
       // Upload to storage
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('bench-photos')
-        .upload(filename, compressed, { contentType: 'image/jpeg', upsert: false });
+      await uploadPhotoWithThumb(filename, compressed);
 
-      if (storageError) throw storageError;
-
-      const photoUrl = storageData.path;
+      const photoUrl = filename;
 
       // Insert into bench_photos table — user_id is always set (auth enforced above)
       const { error: insertError } = await supabase.from('bench_photos').insert({
