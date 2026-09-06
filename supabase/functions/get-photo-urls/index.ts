@@ -52,6 +52,11 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
+    // The batch API returns signed paths like "/object/sign/..." - make them
+    // absolute against the project URL so <img src> works directly.
+    const baseUrl = Deno.env.get("SUPABASE_URL")!;
+    const absolutize = (u: string): string =>
+      u.startsWith("http") ? u : baseUrl + "/storage/v1" + u;
 
     // First attempt: thumbnails when requested, originals otherwise.
     const firstTargets = wantThumb ? clean.map(thumbPath) : clean;
@@ -67,7 +72,7 @@ Deno.serve(async (req: Request) => {
     const signedByPath = new Map<string, string>();
     for (const item of first ?? []) {
       const signed: string | undefined = (item as { signedURL?: string }).signedURL;
-      if (!item.error && signed) signedByPath.set(item.path, signed);
+      if (!item.error && signed) signedByPath.set(item.path, absolutize(signed));
     }
 
     for (let i = 0; i < clean.length; i++) {
@@ -92,7 +97,7 @@ Deno.serve(async (req: Request) => {
       const fallbackByPath = new Map<string, string>();
       for (const item of fallback ?? []) {
         const signed: string | undefined = (item as { signedURL?: string }).signedURL;
-        if (!item.error && signed) fallbackByPath.set(item.path, signed);
+        if (!item.error && signed) fallbackByPath.set(item.path, absolutize(signed));
       }
       for (const m of missingThumbs) {
         const signed = fallbackByPath.get(m.obj);
