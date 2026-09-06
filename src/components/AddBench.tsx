@@ -3,6 +3,7 @@ import { X, Camera, Upload, MapPin, Tag, Navigation, AlertCircle, Loader2 } from
 import { supabase, friendlyError, LOCATION_TYPES, LocationType } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useAchievements } from '../hooks/useAchievements';
+import { uploadPhotoWithThumb } from '../lib/photos';
 
 interface AddBenchProps {
   onClose: () => void;
@@ -214,13 +215,9 @@ export function AddBench({ onClose, onSuccess, initialLat, initialLng }: AddBenc
         const filename = `${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
         const path = `${session.user.id}/${filename}`;
 
-        const { data: storageData, error: storageError } = await supabase.storage
-          .from('bench-photos')
-          .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
+        await uploadPhotoWithThumb(path, compressed);
 
-        if (storageError) throw storageError;
-
-        photoUrls = [storageData.path];
+        photoUrls = [path];
       }
 
       const { data, error: insertError } = await supabase

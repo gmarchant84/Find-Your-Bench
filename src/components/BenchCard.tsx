@@ -16,7 +16,10 @@ export function BenchCard({ bench, onClick }: BenchCardProps) {
   const vibe = getVibe(bench.vibe_category);
   const locType = getLocationType(bench.location_type);
   const [lightbox, setLightbox] = useState(false);
-  const firstPhotoUrl = useSignedPhotoUrl((bench.photos ?? [])[0] ?? null);
+  const firstPhotoUrl = useSignedPhotoUrl(
+    lightbox ? (bench.photos ?? [])[0] : null,
+    'full',
+  );
 
   return (
     <>

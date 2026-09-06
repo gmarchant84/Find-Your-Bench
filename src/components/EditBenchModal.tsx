@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { X, Save, Camera, Upload, Loader2 } from 'lucide-react';
 import { supabase, friendlyError } from '../lib/supabase';
-import { SignedPhotoImg } from '../lib/photos';
+import { SignedPhotoImg, uploadPhotoWithThumb } from '../lib/photos';
 import { useAuth } from '../context/AuthContext';
 
 interface Bench {
@@ -88,11 +88,8 @@ export default function EditBenchModal({ bench, onClose, onSaved }: EditBenchMod
     try {
       const compressed = await compressImage(file);
       const path = `${session.user.id}/${bench.id}/${Date.now()}-${Math.random().toString(36).slice(2)}.jpg`;
-      const { data: storageData, error: storageError } = await supabase.storage
-        .from('bench-photos')
-        .upload(path, compressed, { contentType: 'image/jpeg', upsert: false });
-      if (storageError) throw storageError;
-      setPhotoUrls(prev => [...prev, storageData.path]);
+      await uploadPhotoWithThumb(path, compressed);
+      setPhotoUrls(prev => [...prev, path]);
     } catch (err: any) {
       setError(friendlyError(err, 'Photo upload failed. Please try again.'));
     } finally {

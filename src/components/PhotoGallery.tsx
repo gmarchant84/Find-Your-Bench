@@ -47,7 +47,7 @@ export default function PhotoGallery({ benchId, onPhotoClick }: PhotoGalleryProp
   const [loadError, setLoadError] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
-  const signedSelectedUrl = useSignedPhotoUrl(selectedPhoto?.photo_url);
+  const signedSelectedUrl = useSignedPhotoUrl(selectedPhoto?.photo_url, 'full');
 
   useEffect(() => {
     loadPhotos();
