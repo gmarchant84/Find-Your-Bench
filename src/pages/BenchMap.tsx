@@ -493,7 +493,9 @@ export default function BenchMap() {
         )}
 
         {benches.length > 0 && viewMode === 'map' ? (
-          <div className="space-y-4">
+          <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:space-y-0 lg:items-start">
+            {/* Sidebar column (desktop) / stacked above map (mobile) */}
+            <div className="space-y-4 lg:col-start-2 lg:row-start-1">
             {showNearbyMessage && (
               <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 text-center animate-pulse">
                 <p className="text-green-900 font-semibold">Showing benches near you</p>
@@ -538,8 +540,9 @@ export default function BenchMap() {
                 </div>
               </div>
             )}
+            </div>
             {/* Map is always mounted so camera state is never lost when opening a bench */}
-            <div className={`${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+            <div className={`${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] lg:col-start-1 lg:row-start-1 lg:h-[calc(100vh-160px)] lg:min-h-[480px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
               <BenchMapComponent
                 onBenchClick={(bench) => {
                   lastBenchClickTime.current = Date.now();
