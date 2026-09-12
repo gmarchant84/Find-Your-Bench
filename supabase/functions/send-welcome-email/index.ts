@@ -6,6 +6,11 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+// Sept 11 2026: the signup webhook must send the x-webhook-secret header.
+// Set WEBHOOK_SECRET as an edge function secret (Supabase dashboard) and add
+// the same value as a header on the auth.users INSERT webhook.
+const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
+
 function buildEmailHtml(username: string): string {
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -149,6 +154,14 @@ Deno.serve(async (req: Request) => {
       );
     }
 
+    const webhookSecret = req.headers.get("x-webhook-secret");
+    if (webhookSecret !== WEBHOOK_SECRET) {
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
     const payload = await req.json();
 
     if (payload.type !== "INSERT" || payload.schema !== "auth" || payload.table !== "users") {
@@ -173,6 +186,14 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
+
+    const { data: userData } = await supabase.auth.admin.getUserById(userId);
+    if (!userData?.user || userData.user.email !== email) {
+      return new Response(
+        JSON.stringify({ error: "User verification failed" }),
+        { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
 
     const username = await fetchUsername(supabase, userId);
 
