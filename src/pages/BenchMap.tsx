@@ -237,48 +237,53 @@ export default function BenchMap() {
 
     if (data) {
       const benchData = (data as Bench[]).filter(b => isAdmin || !b.is_hidden);
+      const withDistance = (list: Bench[]) => userLocation
+        ? list.map(bench => ({
+            ...bench,
+            distance: calcDistance(userLocation.lat, userLocation.lng, Number(bench.latitude), Number(bench.longitude)),
+          }))
+        : list;
 
-      // Fetch founder profiles in a single query
+      // Put benches on screen right away - founder enrichment follows and
+      // re-renders once it lands. Keeps the map from waiting on extra queries.
+      setBenches(withDistance(benchData));
+
       const founderIds = [...new Set(benchData.map(b => b.founding_user_id).filter(Boolean))] as string[];
       const BADGE_PRIORITY = ['the_benchfather','bench_legend','park_ranger','perma_bencher','bench_obsessed','trail_blazer','the_reviewer','unstoppable','scout','connoisseur','on_a_roll','critic','groundskeeper','seedling'];
-      let profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean; featured_badge_id: string | null; earned_badges: string[] }>();
       if (founderIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, username, is_founding_bencher, featured_badge_id')
-          .in('id', founderIds);
-        const { data: unlocks } = await supabase
-          .from('user_achievement_unlocks')
-          .select('user_id, achievement_id')
-          .in('user_id', founderIds);
+        // Fetch founder profiles and badges in parallel
+        const [{ data: profiles }, { data: unlocks }] = await Promise.all([
+          supabase
+            .from('profiles')
+            .select('id, username, is_founding_bencher, featured_badge_id')
+            .in('id', founderIds),
+          supabase
+            .from('user_achievement_unlocks')
+            .select('user_id, achievement_id')
+            .in('user_id', founderIds),
+        ]);
         const earnedByUser = new Map<string, string[]>();
         (unlocks ?? []).forEach(u => {
           if (!earnedByUser.has(u.user_id)) earnedByUser.set(u.user_id, []);
           earnedByUser.get(u.user_id)!.push(u.achievement_id);
         });
+        const profileMap = new Map<string, { username: string | null; is_founding_bencher: boolean; featured_badge_id: string | null; earned_badges: string[] }>();
         (profiles ?? []).forEach(p => profileMap.set(p.id, { username: p.username ?? null, is_founding_bencher: p.is_founding_bencher ?? false, featured_badge_id: p.featured_badge_id ?? null, earned_badges: earnedByUser.get(p.id) ?? [] }));
-      }
 
-      const enriched = benchData.map(b => {
-        const profile = b.founding_user_id ? profileMap.get(b.founding_user_id) : null;
-        const badge = profile?.featured_badge_id
-          ?? BADGE_PRIORITY.find(bp => profile?.earned_badges.includes(bp))
-          ?? null;
-        return {
-          ...b,
-          founder_username: profile?.username ?? null,
-          founder_is_founding_bencher: profile?.is_founding_bencher ?? false,
-          founder_featured_badge: badge,
-        };
-      });
+        const enriched = benchData.map(b => {
+          const profile = b.founding_user_id ? profileMap.get(b.founding_user_id) : null;
+          const badge = profile?.featured_badge_id
+            ?? BADGE_PRIORITY.find(bp => profile?.earned_badges.includes(bp))
+            ?? null;
+          return {
+            ...b,
+            founder_username: profile?.username ?? null,
+            founder_is_founding_bencher: profile?.is_founding_bencher ?? false,
+            founder_featured_badge: badge,
+          };
+        });
 
-      if (userLocation) {
-        setBenches(enriched.map(bench => ({
-          ...bench,
-          distance: calcDistance(userLocation.lat, userLocation.lng, Number(bench.latitude), Number(bench.longitude)),
-        })));
-      } else {
-        setBenches(enriched);
+        setBenches(withDistance(enriched));
       }
     }
     setLoading(false);
@@ -492,7 +497,7 @@ export default function BenchMap() {
           </>
         )}
 
-        {benches.length > 0 && viewMode === 'map' ? (
+        {viewMode === 'map' ? (
           <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:space-y-0 lg:items-start">
             {/* Sidebar column (desktop) / stacked above map (mobile) */}
             <div className="space-y-4 lg:col-start-2 lg:row-start-1">
@@ -542,7 +547,14 @@ export default function BenchMap() {
             )}
             </div>
             {/* Map is always mounted so camera state is never lost when opening a bench */}
-            <div className={`${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] lg:col-start-1 lg:row-start-1 lg:h-[calc(100vh-160px)] lg:min-h-[480px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+            <div className={`relative ${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] lg:col-start-1 lg:row-start-1 lg:h-[calc(100vh-160px)] lg:min-h-[480px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+              {loading && benches.length === 0 && (
+                <div className="absolute inset-0 z-10 flex items-end justify-center pb-5 pointer-events-none">
+                  <div className="bg-white/95 shadow-md rounded-full px-4 py-1.5 text-sm font-semibold text-green-700 border border-green-100 animate-pulse">
+                    Finding benches…
+                  </div>
+                </div>
+              )}
               <BenchMapComponent
                 onBenchClick={(bench) => {
                   lastBenchClickTime.current = Date.now();
