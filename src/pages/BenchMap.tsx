@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../lib/supabase';
+import { supabase, type Bench as DbBench } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import BenchList from '../components/BenchList';
 import AddBenchModal from '../components/AddBenchModal';
@@ -573,6 +573,7 @@ export default function BenchMap() {
                 onPlacementCancel={handlePlacementCancel}
                 onPlacedPinChange={setPlacedPin}
                 onCameraChange={handleCameraChange}
+                benches={benches as unknown as DbBench[]}
               />
             </div>
           </div>

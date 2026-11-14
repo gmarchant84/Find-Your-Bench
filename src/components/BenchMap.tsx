@@ -22,6 +22,8 @@ interface BenchMapProps {
   onPlacementCancel?: () => void;
   onPlacedPinChange?: (pin: { lat: number; lng: number } | null) => void;
   onCameraChange?: (center: { lat: number; lng: number }, zoom: number) => void;
+  /** Benches already loaded by the parent page. When provided the map skips its own fetch. */
+  benches?: Bench[];
 }
 
 interface BenchWithDistance extends Bench {
@@ -35,6 +37,7 @@ function MarkerWithRef({
   isSelected,
   isSaved,
   isNearby,
+  showPhoto,
   onClick,
   onRef,
 }: {
@@ -42,6 +45,7 @@ function MarkerWithRef({
   isSelected: boolean;
   isSaved: boolean;
   isNearby: boolean;
+  showPhoto: boolean;
   onClick: () => void;
   onRef: (marker: google.maps.marker.AdvancedMarkerElement | null) => void;
 }) {
@@ -75,7 +79,7 @@ function MarkerWithRef({
         className={`relative cursor-pointer transition-all duration-200 hover:scale-110 active:scale-90 ${scale}`}
         style={{ filter: isSelected ? 'drop-shadow(0 4px 8px rgba(0,0,0,0.35))' : 'drop-shadow(0 2px 4px rgba(0,0,0,0.2))' }}
       >
-        {(bench.photos ?? []).length > 0 ? (
+        {showPhoto && (bench.photos ?? []).length > 0 ? (
           <div className="w-12 h-12 rounded-full border-4 shadow-lg overflow-hidden" style={borderStyle}>
             <SignedPhotoImg src={(bench.photos ?? [])[0]} alt={bench.name} className="w-full h-full object-cover"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
@@ -118,6 +122,7 @@ function MapContent({
   onPlacementCancel,
   onPlacedPinChange,
   onCameraChange,
+  benches: benchesProp,
 }: BenchMapProps) {
   const map = useMap();
   const [benches, setBenches] = useState<BenchWithDistance[]>([]);
@@ -138,6 +143,10 @@ function MapContent({
   const markerClickedRef = useRef(false);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markerRefs = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
+  // Bench ids whose marker is currently drawn on screen as a single (unclustered) pin.
+  // Only these load a photo - every other marker is hidden inside a cluster or off screen,
+  // and rendering an <img> for it would still download the image.
+  const [photoBenchIds, setPhotoBenchIds] = useState<Set<string>>(() => new Set());
   const placementModeRef = useRef(placementMode);
   const isTouchDevice = useRef(
     typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0)
@@ -149,9 +158,13 @@ function MapContent({
   }, [placementMode]);
 
   useEffect(() => {
-    fetchBenches();
+    if (!benchesProp) fetchBenches();
     fetchSavedBenches();
   }, []);
+
+  useEffect(() => {
+    if (benchesProp) setBenches(benchesProp as BenchWithDistance[]);
+  }, [benchesProp]);
 
   // Reset placement state when mode exits; clear stale marker-click guard when mode enters
   useEffect(() => {
@@ -207,7 +220,28 @@ function MapContent({
   useEffect(() => {
     if (!map) return;
     if (!clustererRef.current) {
-      clustererRef.current = new MarkerClusterer({ map, markers: [] });
+      const clusterer = new MarkerClusterer({ map, markers: [] });
+      clustererRef.current = clusterer;
+      google.maps.event.addListener(clusterer, 'clusteringend', () => {
+        const bounds = map.getBounds();
+        const idByMarker = new Map<unknown, string>();
+        markerRefs.current.forEach((m, id) => idByMarker.set(m, id));
+        const visible: string[] = [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        for (const cluster of ((clusterer as any).clusters ?? []) as Array<{ markers?: unknown[]; position: google.maps.LatLng }>) {
+          if (cluster.markers?.length !== 1) continue;
+          if (bounds && !bounds.contains(cluster.position)) continue;
+          const id = idByMarker.get(cluster.markers[0]);
+          if (id) visible.push(id);
+        }
+        // Sticky: once a marker has shown its photo, keep it so panning never blanks it.
+        setPhotoBenchIds((prev) => {
+          if (visible.every((id) => prev.has(id))) return prev;
+          const next = new Set(prev);
+          visible.forEach((id) => next.add(id));
+          return next;
+        });
+      });
     }
     const markers = Array.from(markerRefs.current.values());
     clustererRef.current.clearMarkers();
@@ -399,6 +433,7 @@ function MapContent({
             isSelected={selectedBench?.id === bench.id || popupBench?.id === bench.id}
             isSaved={savedBenchIds.includes(bench.id)}
             isNearby={nearbyBenchIds.includes(bench.id)}
+            showPhoto={photoBenchIds.has(bench.id) || selectedBench?.id === bench.id || popupBench?.id === bench.id}
             onClick={() => {
               markerClickedRef.current = true;
               if (placementMode) return;

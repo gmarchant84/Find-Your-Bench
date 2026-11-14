@@ -107,7 +107,7 @@ export function getSignedPhotoUrl(
   size: PhotoSize = 'thumb',
 ): string | null {
   if (!url) return null;
-  if (!isSupabasePhoto(url) && !looksLikeStoragePath(url)) return url; // external URL
+  if (!isSupabasePhoto(url) && !looksLikeStoragePath(url)) return sizeExternalUrl(url, size);
   const path = photoPath(url);
   const key = `${size}:${path}`;
   const entry = cache.get(key);
@@ -115,6 +115,16 @@ export function getSignedPhotoUrl(
   if (!queue.some((q) => q.path === path && q.size === size)) queue.push({ path, size });
   if (!flushTimer) flushTimer = setTimeout(flushQueue, 40);
   return null;
+}
+
+/**
+ * External seed photos (Pexels) are multi-megabyte originals. Pexels serves
+ * resized variants via query params, so ask for a size that matches the slot.
+ */
+function sizeExternalUrl(url: string, size: PhotoSize): string {
+  if (!url.includes('images.pexels.com/') || url.includes('?')) return url;
+  const w = size === 'thumb' ? 400 : 1600;
+  return `${url}?auto=compress&cs=tinysrgb&w=${w}`;
 }
 
 /** New-style stored values are bare storage paths (uploads or avatars). */
@@ -180,7 +190,8 @@ export function SignedPhotoImg({
       alt={alt}
       className={className}
       style={style}
-      loading={loading}
+      loading={loading ?? (size === 'thumb' ? 'lazy' : undefined)}
+      decoding="async"
       onError={onError}
     />
   );
