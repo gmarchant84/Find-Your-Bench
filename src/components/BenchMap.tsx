@@ -81,7 +81,7 @@ function MarkerWithRef({
       >
         {showPhoto && (bench.photos ?? []).length > 0 ? (
           <div className="w-12 h-12 rounded-full border-4 shadow-lg overflow-hidden" style={borderStyle}>
-            <SignedPhotoImg src={(bench.photos ?? [])[0]} alt={bench.name} className="w-full h-full object-cover"
+            <SignedPhotoImg src={(bench.photos ?? [])[0]} alt={bench.name} className="w-full h-full object-cover" loading="eager"
               onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
             />
           </div>
