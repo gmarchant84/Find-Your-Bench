@@ -113,34 +113,43 @@ export function AddRating({ benchId, onClose, onSuccess }: AddRatingProps) {
         });
 
       if (insertError) throw insertError;
+    } catch {
+      setError('Unable to submit rating. Please try again.');
+      setLoading(false);
+      return;
+    }
 
-      // Notify the bench founder (if different from the rater) — non-blocking
-      try {
-        const { data: benchData } = await supabase
-          .from('benches')
-          .select('founding_user_id')
-          .eq('id', benchId)
-          .maybeSingle();
-        if (benchData?.founding_user_id && benchData.founding_user_id !== session.user.id) {
-          await supabase.from('bench_notifications').insert({
-            user_id: benchData.founding_user_id,
-            bench_id: benchId,
-            actor_id: session.user.id,
-            type: 'rating',
-          });
-        }
-      } catch {
-        // Notification failure should not block the rating submission
+    // The rating is saved. Everything below is best-effort: a failure here
+    // must not tell the user their rating failed (they'd resubmit) or keep
+    // the modal open.
+    try {
+      // Notify the bench founder (if different from the rater)
+      const { data: benchData } = await supabase
+        .from('benches')
+        .select('founding_user_id')
+        .eq('id', benchId)
+        .maybeSingle();
+      if (benchData?.founding_user_id && benchData.founding_user_id !== session.user.id) {
+        await supabase.from('bench_notifications').insert({
+          user_id: benchData.founding_user_id,
+          bench_id: benchId,
+          actor_id: session.user.id,
+          type: 'rating',
+        });
       }
+    } catch {
+      // Notification failure should not block the rating submission
+    }
 
+    try {
       await triggerAchievementCheck();
       await refreshStreak();
-      onSuccess();
     } catch (err) {
-      setError('Unable to submit rating. Please try again.');
-    } finally {
-      setLoading(false);
+      console.error('Post-rating refresh failed:', err);
     }
+
+    setLoading(false);
+    onSuccess();
   };
 
   return (

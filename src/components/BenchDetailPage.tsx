@@ -940,7 +940,6 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
       {showAddRating && (
         <AddRating
           benchId={bench.id}
-          foundingUserId={bench.founding_user_id}
           onClose={() => setShowAddRating(false)}
           onSuccess={() => { setShowAddRating(false); fetchRatings(); refreshBench(); }}
         />
