@@ -635,7 +635,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
                   </div>
                 );
               })()}
-              {bench.name !== bench.original_name && (
+              {bench.original_name && bench.original_name !== bench.name && (
                 <p className="text-gray-500 text-sm">Originally: {bench.original_name}</p>
               )}
             </div>

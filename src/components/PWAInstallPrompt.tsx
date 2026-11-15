@@ -63,7 +63,9 @@ export default function PWAInstallPrompt() {
   if (!showBanner || dismissed) return null;
 
   return (
-    <div className="fixed bottom-24 left-4 right-4 z-[150] animate-slide-up">
+    // z-40: below every modal/sheet (z-50+) so it never covers the search sheet
+    // or a form; it sits at the bottom edge, clear of the home indicator.
+    <div className="fixed left-4 right-4 z-40 animate-slide-up" style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom, 0px))' }}>
       <div className="bg-gray-900 text-white rounded-2xl shadow-2xl p-4 flex items-start gap-3 max-w-sm mx-auto">
         <img src="/fyb-logo-256.png" alt="FYB" className="w-10 h-10 rounded-xl object-contain flex-shrink-0" />
         <div className="flex-1 min-w-0">

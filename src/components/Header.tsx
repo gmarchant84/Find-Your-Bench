@@ -158,10 +158,10 @@ export default function Header({
         </button>
         <button
           onClick={onShowPlaceSearch}
-          className="flex-1 sm:flex-none flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-500 rounded-lg text-sm border border-gray-200 transition btn-press"
+          className="flex-1 min-w-0 sm:flex-none flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-500 rounded-lg text-sm border border-gray-200 transition btn-press"
         >
           <Search className="w-3.5 h-3.5" />
-          <span className="text-gray-400">Search places or benches…</span>
+          <span className="text-gray-400 truncate">Search benches…</span>
         </button>
         <button
           onClick={onShowFilters}
