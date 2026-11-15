@@ -29,6 +29,7 @@ interface Bench {
   average_rating?: number;
   total_ratings?: number;
   vibe_category?: string | null;
+  location_type?: string | null;
   is_hidden?: boolean;
   founder_username?: string | null;
   founder_is_founding_bencher?: boolean;
@@ -94,6 +95,13 @@ export default function BenchMap() {
   const [placedPin, setPlacedPin] = useState<{ lat: number; lng: number } | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const lastBenchClickTime = useRef(0);
+  // Latest-value refs so async fetches and the realtime callback (both created
+  // once on mount) never read stale userLocation / isAdmin from the first render.
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
+  const isAdminRef = useRef(isAdmin);
+  isAdminRef.current = isAdmin;
+  const userId = session?.user?.id ?? null;
 
   // Persist camera state so it survives bench-detail overlay open/close
   const savedState = useRef<SavedMapState>(
@@ -109,8 +117,6 @@ export default function BenchMap() {
   useEffect(() => {
     fetchBenches();
     getUserLocation();
-    fetchUserPreferences();
-    checkIfNewUser();
     const channel = supabase
       .channel('benches-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'benches' }, () => {
@@ -122,6 +128,18 @@ export default function BenchMap() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // User-specific data must follow the signed-in user (sign in/out, or a
+  // session that arrives after the auth timeout), not just the first render.
+  useEffect(() => {
+    fetchUserPreferences();
+    checkIfNewUser();
+  }, [userId]);
+
+  // isAdmin resolves after the first render; refetch so admins see hidden benches.
+  useEffect(() => {
+    if (isAdmin) fetchBenches();
+  }, [isAdmin]);
 
   const fetchUserPreferences = async () => {
     if (!session?.user) return;
@@ -210,7 +228,7 @@ export default function BenchMap() {
   const calculateDistances = () => {
     if (!userLocation) return;
 
-    const benchesWithDistance = benches.map((bench) => ({
+    setBenches(prev => prev.map((bench) => ({
       ...bench,
       distance: calcDistance(
         userLocation.lat,
@@ -218,9 +236,7 @@ export default function BenchMap() {
         Number(bench.latitude),
         Number(bench.longitude)
       ),
-    }));
-
-    setBenches(benchesWithDistance);
+    })));
   };
 
   const fetchBenches = async () => {
@@ -236,13 +252,18 @@ export default function BenchMap() {
     }
 
     if (data) {
-      const benchData = (data as Bench[]).filter(b => isAdmin || !b.is_hidden);
-      const withDistance = (list: Bench[]) => userLocation
-        ? list.map(bench => ({
-            ...bench,
-            distance: calcDistance(userLocation.lat, userLocation.lng, Number(bench.latitude), Number(bench.longitude)),
-          }))
-        : list;
+      const benchData = (data as Bench[]).filter(b => isAdminRef.current || !b.is_hidden);
+      // Read the location at the moment each result lands (not when this
+      // function was created) so a GPS fix that arrived mid-fetch isn't wiped.
+      const withDistance = (list: Bench[]) => {
+        const loc = userLocationRef.current;
+        return loc
+          ? list.map(bench => ({
+              ...bench,
+              distance: calcDistance(loc.lat, loc.lng, Number(bench.latitude), Number(bench.longitude)),
+            }))
+          : list;
+      };
 
       // Put benches on screen right away - founder enrichment follows and
       // re-renders once it lands. Keeps the map from waiting on extra queries.
