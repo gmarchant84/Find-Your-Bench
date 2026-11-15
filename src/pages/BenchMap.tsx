@@ -85,7 +85,13 @@ export default function BenchMap() {
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('miles');
   const [isNewUser, setIsNewUser] = useState(true);
-  const [showNearbyMessage] = useState(false);
+  const [introDismissed, setIntroDismissed] = useState(() => {
+    try { return localStorage.getItem('fyb_intro_dismissed') === '1'; } catch { return false; }
+  });
+  const dismissIntro = () => {
+    setIntroDismissed(true);
+    try { localStorage.setItem('fyb_intro_dismissed', '1'); } catch { /* private mode */ }
+  };
   // mapCenter/mapZoom are used only for imperative pan commands (place search, nearby).
   // The map's own camera is the source of truth for state preservation.
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -523,38 +529,38 @@ export default function BenchMap() {
         )}
 
         {viewMode === 'map' ? (
-          <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:space-y-0 lg:items-start">
-            {/* Sidebar column (desktop) / stacked above map (mobile) */}
-            <div className="space-y-4 lg:col-start-2 lg:row-start-1">
-            {showNearbyMessage && (
-              <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 text-center animate-pulse">
-                <p className="text-green-900 font-semibold">Showing benches near you</p>
-              </div>
-            )}
-            {(
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-4 lg:items-start">
+            {/* Mobile: compact Bench of the Day, then the map, then the intro line.
+                Desktop: map on the left, the rest in the right column. */}
+            <div className="empty:hidden lg:col-start-2 lg:row-start-1">
               <BenchOfTheDay
-                userLocation={userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : null}
+                latitude={userLocation?.lat ?? null}
+                longitude={userLocation?.lng ?? null}
                 onBenchClick={(benchId) => {
                   navigate(`/bench/${benchId}`);
                 }}
               />
-            )}
-            {isNewUser && (
-              <div className="bg-white border-2 border-green-100 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">New to Find Your Bench?</h3>
-                  <button
-                    onClick={() => navigate('/about')}
-                    className="text-xs text-green-600 font-semibold hover:text-green-700 transition"
-                  >
-                    Learn more →
-                  </button>
-                </div>
+            </div>
+            {isNewUser && !introDismissed && (
+              <div className="row-start-3 lg:col-start-2 lg:row-start-2 bg-white border border-green-100 rounded-xl pl-4 pr-1 py-1 flex items-center gap-2">
+                <p className="flex-1 min-w-0 text-sm text-gray-700 truncate">New to Find Your Bench?</p>
+                <button
+                  onClick={() => navigate('/about')}
+                  className="flex-shrink-0 px-2 py-2 text-sm text-green-700 font-semibold hover:text-green-800 transition"
+                >
+                  Learn more
+                </button>
+                <button
+                  onClick={dismissIntro}
+                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
-            </div>
-            {/* Map is always mounted so camera state is never lost when opening a bench */}
-            <div className={`relative ${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] lg:col-start-1 lg:row-start-1 lg:h-[calc(100vh-160px)] lg:min-h-[480px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+            {/* Map: 60% of the dynamic viewport on mobile so it is on the first screen */}
+            <div className="map-frame relative lg:col-start-1 lg:row-start-1 lg:row-span-2 rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg">
               {loading && benches.length === 0 && (
                 <div className="absolute inset-0 z-10 flex items-end justify-center pb-5 pointer-events-none">
                   <div className="bg-white/95 shadow-md rounded-full px-4 py-1.5 text-sm font-semibold text-green-700 border border-green-100 animate-pulse">
