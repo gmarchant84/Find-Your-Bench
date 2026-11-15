@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus, Bookmark, Check, X, AlertCircle, Camera, CheckCircle2, FolderOpen, Share2, ExternalLink, LogIn } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus, Bookmark, Check, X, AlertCircle, Camera, CheckCircle2, FolderOpen, Share2, ExternalLink, LogIn, Flag } from 'lucide-react';
 import { supabase, getVibe, getLocationType } from '../lib/supabase';
+import { reportBenchMailto } from '../lib/contact';
 import type { Session } from '@supabase/supabase-js';
 import VerificationBadge from './VerificationBadge';
 import { useAuth } from '../context/AuthContext';
@@ -947,6 +948,17 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
             </div>
           </div>
         )}
+
+        {/* Report / contact: covers the bench itself, its photos and its reviews */}
+        <div className="mt-6 mb-2 text-center">
+          <a
+            href={reportBenchMailto(bench)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-600 transition"
+          >
+            <Flag className="w-3.5 h-3.5" />
+            Report this bench, a photo or a review
+          </a>
+        </div>
       </div>
 
       {showAddRating && (

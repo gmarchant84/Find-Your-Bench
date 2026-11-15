@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, MapPin, Star, Camera, Award, Globe, Users, Compass } from 'lucide-react';
+import { CONTACT_EMAIL, mailtoUrl } from '../lib/contact';
 
 export default function AboutPage() {
   const navigate = useNavigate();
@@ -137,6 +138,16 @@ export default function AboutPage() {
           >
             Start Exploring
           </button>
+        </div>
+
+        {/* Contact */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-5 mb-6 text-center">
+          <h3 className="font-bold text-gray-900 mb-1">Questions, feedback or a problem?</h3>
+          <p className="text-gray-500 text-sm">
+            Email{' '}
+            <a href={mailtoUrl('Find Your Bench feedback')} className="text-green-700 font-semibold underline underline-offset-2">{CONTACT_EMAIL}</a>
+            . To report a specific bench, photo or review, use the "Report" link at the bottom of its page.
+          </p>
         </div>
 
         {/* Built by */}
