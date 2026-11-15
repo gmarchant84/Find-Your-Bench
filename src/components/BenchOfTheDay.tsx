@@ -63,10 +63,10 @@ function dailyIndex(count: number) {
 }
 
 /**
- * Compact one-row "Bench of the Day". The RPC picks one bench per day for the
- * whole world (it ignores max_distance_miles), so when that bench is more than
- * BOTD_MAX_DISTANCE_MILES away we feature a nearby bench from the loaded list
- * instead. With no location it shows the RPC's pick. Renders nothing while
+ * Compact one-row "Bench of the Day". The RPC picks a nearby bench for the day
+ * (10/25/50 mi rings). If it still returns a far-away bench (older RPC, or the
+ * loaded list has benches it skipped), we feature a nearby bench from the
+ * loaded list instead. With no location it shows the RPC's pick. Renders nothing while
  * loading, so it never flashes a skeleton above the map.
  */
 export function BenchOfTheDay({ latitude, longitude, benches = [], onBenchClick }: BenchOfTheDayProps) {
@@ -173,8 +173,9 @@ export function BenchOfTheDay({ latitude, longitude, benches = [], onBenchClick 
               {bench.average_rating.toFixed(1)}
             </span>
           )}
-          {bench.distance_miles !== null && (
-            <span>{bench.distance_miles < 100 ? `${bench.distance_miles.toFixed(1)} mi away` : `${Math.round(bench.distance_miles).toLocaleString()} mi away`}</span>
+          {/* Far-away global picks (no benches near the user yet) skip the distance */}
+          {bench.distance_miles !== null && bench.distance_miles <= 250 && (
+            <span>{bench.distance_miles.toFixed(1)} mi away</span>
           )}
         </div>
       </div>

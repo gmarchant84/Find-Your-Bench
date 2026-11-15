@@ -1,18 +1,28 @@
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../lib/supabase';
 import { ArrowLeft, MapPin, Star, Camera, Award, Globe, Users, Compass } from 'lucide-react';
 import { CONTACT_EMAIL, mailtoUrl } from '../lib/contact';
 
 export default function AboutPage() {
   const navigate = useNavigate();
 
-  const cities = [
-    { name: 'San Francisco', benches: '80+' },
-    { name: 'Los Angeles', benches: '20+' },
-    { name: 'San Diego', benches: '15+' },
-    { name: 'Denver', benches: '15+' },
-    { name: 'Palo Alto', benches: '10+' },
-    { name: 'Juneau, AK', benches: '10+' },
-  ];
+  // Live counts of real activity (seed rows and hidden test/duplicate benches excluded).
+  const [stats, setStats] = useState<{ benches: number; ratings: number; benchers: number } | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const [b, r, p] = await Promise.all([
+        supabase.from('benches').select('id', { count: 'exact', head: true }).eq('is_seeded', false).or('is_hidden.is.null,is_hidden.eq.false'),
+        supabase.from('ratings').select('id', { count: 'exact', head: true }),
+        supabase.from('profiles').select('id', { count: 'exact', head: true }),
+      ]);
+      if (!cancelled && !b.error && b.count !== null) {
+        setStats({ benches: b.count, ratings: r.count ?? 0, benchers: p.count ?? 0 });
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const features = [
     { icon: MapPin, title: 'Discover Benches', desc: 'Browse a map of unique benches near you — from hidden park gems to iconic city spots.' },
@@ -113,16 +123,22 @@ export default function AboutPage() {
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 mb-6">
           <h3 className="font-bold text-gray-900 mb-1">Where does FYB work?</h3>
           <p className="text-gray-500 text-sm mb-4">
-            FYB works anywhere in the world — you can add a bench from your backyard to Bali. We're currently growing fastest in these cities:
+            FYB works anywhere in the world. You can add a bench from your backyard to Bali. Most benches so far are in the San Francisco Bay Area.
           </p>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {cities.map(({ name, benches }) => (
-              <div key={name} className="flex items-center justify-between bg-green-50 border border-green-100 rounded-xl px-3 py-2.5">
-                <span className="text-sm font-medium text-gray-800">{name}</span>
-                <span className="text-xs font-bold text-green-700">{benches}</span>
-              </div>
-            ))}
-          </div>
+          {stats && (
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { label: 'Benches', value: stats.benches },
+                { label: 'Ratings', value: stats.ratings },
+                { label: 'Benchers', value: stats.benchers },
+              ].map(({ label, value }) => (
+                <div key={label} className="flex flex-col items-center bg-green-50 border border-green-100 rounded-xl px-3 py-2.5">
+                  <span className="text-lg font-bold text-green-700">{value.toLocaleString()}</span>
+                  <span className="text-xs font-medium text-gray-600">{label}</span>
+                </div>
+              ))}
+            </div>
+          )}
           <p className="text-xs text-gray-400 mt-3 text-center">Don't see your city? Add the first bench and start the movement.</p>
         </div>
 
