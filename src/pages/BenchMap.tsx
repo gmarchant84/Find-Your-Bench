@@ -544,6 +544,7 @@ export default function BenchMap() {
               <BenchOfTheDay
                 latitude={userLocation?.lat ?? null}
                 longitude={userLocation?.lng ?? null}
+                benches={benches}
                 onBenchClick={(benchId) => {
                   navigate(`/bench/${benchId}`);
                 }}
