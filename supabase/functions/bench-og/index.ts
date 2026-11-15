@@ -7,8 +7,27 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
-const APP_URL = "https://findyourbench.app";
-const DEFAULT_OG_IMAGE = `${APP_URL}/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png`;
+// Canonical host (the apex 307-redirects to www).
+const APP_URL = "https://www.findyourbench.app";
+const DEFAULT_OG_IMAGE = `${APP_URL}/fyb-logo.png`;
+const BUCKET = "bench-photos";
+const PUBLIC_URL_MARKER = `/storage/v1/object/public/${BUCKET}/`;
+
+// The crawler stub must never be stored by a shared cache: the same /bench/:id
+// URL serves the SPA to people (see api/bench-preview.ts).
+const NO_SHARED_CACHE = { "Cache-Control": "private, no-store, max-age=0", Vary: "User-Agent" };
+
+/**
+ * Stored photo values are a bare storage path ("uid/file.jpg"), a legacy public
+ * URL containing PUBLIC_URL_MARKER, or an external URL (seed photos).
+ * Returns the storage path for bucket photos, or null for external URLs.
+ */
+function storagePath(raw: string): string | null {
+  const i = raw.indexOf(PUBLIC_URL_MARKER);
+  if (i >= 0) return raw.slice(i + PUBLIC_URL_MARKER.length);
+  if (/^https?:\/\//i.test(raw)) return null;
+  return raw.replace(/^\/+/, "");
+}
 const SITE_NAME = "Find Your Bench";
 
 function escapeHtml(s: string): string {
@@ -26,6 +45,7 @@ function buildHtml(opts: {
   image: string;
 }): string {
   const { url, title, description, image } = opts;
+  const appLink = url.includes("?") ? `${url}&from=og` : `${url}?from=og`;
   const t = escapeHtml(title);
   const d = escapeHtml(description);
   const u = escapeHtml(url);
@@ -43,8 +63,6 @@ function buildHtml(opts: {
   <meta property="og:title" content="${t}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${img}" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="${escapeHtml(SITE_NAME)}" />
 
   <meta name="twitter:card" content="summary_large_image" />
@@ -52,32 +70,14 @@ function buildHtml(opts: {
   <meta name="twitter:description" content="${d}" />
   <meta name="twitter:image" content="${img}" />
 
-  <meta http-equiv="refresh" content="0; url=${u}" />
   <link rel="canonical" href="${u}" />
 </head>
 <body>
-  <p>Redirecting to <a href="${u}">${t}</a>…</p>
+  <!-- No meta refresh: this stub is for link-preview crawlers only. The
+       ?from=og link always serves the app, so it can never loop. -->
+  <p><a href="${escapeHtml(appLink)}">${t}</a></p>
 </body>
 </html>`;
-}
-
-function isCrawler(req: Request): boolean {
-  const ua = (req.headers.get("user-agent") ?? "").toLowerCase();
-  return (
-    ua.includes("facebookexternalhit") ||
-    ua.includes("twitterbot") ||
-    ua.includes("linkedinbot") ||
-    ua.includes("whatsapp") ||
-    ua.includes("telegrambot") ||
-    ua.includes("slackbot") ||
-    ua.includes("discordbot") ||
-    ua.includes("applebot") ||
-    ua.includes("googlebot") ||
-    ua.includes("bingbot") ||
-    ua.includes("dataaccessd") ||
-    ua.includes("messages/") ||
-    ua.includes("preview")
-  );
 }
 
 Deno.serve(async (req: Request) => {
@@ -97,7 +97,7 @@ Deno.serve(async (req: Request) => {
           description: "Discover, rate, and share your favorite benches in the wild. The community-powered bench map.",
           image: DEFAULT_OG_IMAGE,
         }),
-        { status: 200, headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } }
+        { status: 200, headers: { ...corsHeaders, ...NO_SHARED_CACHE, "Content-Type": "text/html; charset=utf-8" } }
       );
     }
 
@@ -125,18 +125,36 @@ Deno.serve(async (req: Request) => {
           description: "Discover, rate, and share your favorite benches in the wild.",
           image: DEFAULT_OG_IMAGE,
         }),
-        { status: 404, headers: { ...corsHeaders, "Content-Type": "text/html; charset=utf-8" } }
+        { status: 404, headers: { ...corsHeaders, ...NO_SHARED_CACHE, "Content-Type": "text/html; charset=utf-8" } }
       );
     }
 
     const benchUrl = `${APP_URL}/bench/${bench.id}`;
+    const raw: string | null = Array.isArray(bench.photos) && bench.photos.length > 0
+      ? bench.photos[0]
+      : null;
+    const path = raw ? storagePath(raw) : null;
 
-    if (!isCrawler(req)) {
-      return new Response(null, {
-        status: 302,
-        headers: { ...corsHeaders, Location: benchUrl },
+    // ?image=1: used by api/og-image.ts (the stable og:image URL) to get a
+    // freshly signed URL for the bench's first photo.
+    if (url.searchParams.get("image") === "1") {
+      let signedUrl: string | null = null;
+      if (path) {
+        const { data: signed } = await admin.storage.from(BUCKET).createSignedUrl(path, 600);
+        signedUrl = signed?.signedUrl ?? null;
+      } else if (raw) {
+        signedUrl = raw;
+      }
+      return new Response(JSON.stringify({ url: signedUrl }), {
+        status: signedUrl ? 200 : 404,
+        headers: { ...corsHeaders, ...NO_SHARED_CACHE, "Content-Type": "application/json" },
       });
     }
+
+    // There is deliberately no redirect for non-crawler user agents here:
+    // the caller (api/bench-preview.ts) already decided this is a crawler, and
+    // a 302 back to /bench/:id sent it into a server-side redirect loop for
+    // UAs the two crawler lists disagreed on (e.g. Pinterest, Snapchat).
 
     const title = `${bench.name} | ${SITE_NAME}`;
 
@@ -146,25 +164,12 @@ Deno.serve(async (req: Request) => {
         : bench.description
       : `Discover this bench on ${SITE_NAME}.`;
 
-    // The photo bucket is private: swap stored photo URLs for short-lived
-    // signed URLs so social crawlers can fetch the og:image. External seed
+    // The photo bucket is private and signed URLs expire after minutes, so
+    // og:image points at a stable app URL that signs on demand. External seed
     // photos (e.g. pexels) pass through unchanged.
     let image = DEFAULT_OG_IMAGE;
-    const raw = Array.isArray(bench.photos) && bench.photos.length > 0
-      ? bench.photos[0]
-      : null;
-    if (raw) {
-      const marker = "/storage/v1/object/public/bench-photos/";
-      if (raw.includes(marker)) {
-        const photoPath = raw.slice(raw.indexOf(marker) + marker.length);
-        const { data: signed } = await admin.storage
-          .from("bench-photos")
-          .createSignedUrl(photoPath, 3600);
-        if (signed?.signedUrl) image = signed.signedUrl;
-      } else {
-        image = raw;
-      }
-    }
+    if (path) image = `${APP_URL}/api/og-image?id=${encodeURIComponent(bench.id)}`;
+    else if (raw) image = raw;
 
     const html = buildHtml({ url: benchUrl, title, description, image });
 
@@ -172,8 +177,8 @@ Deno.serve(async (req: Request) => {
       status: 200,
       headers: {
         ...corsHeaders,
+        ...NO_SHARED_CACHE,
         "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "public, max-age=300, stale-while-revalidate=60",
       },
     });
   } catch (err) {
