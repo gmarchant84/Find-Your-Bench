@@ -9,7 +9,7 @@ const corsHeaders = {
 
 // Canonical host (the apex 307-redirects to www).
 const APP_URL = "https://www.findyourbench.app";
-const DEFAULT_OG_IMAGE = `${APP_URL}/fyb-logo.png`;
+const DEFAULT_OG_IMAGE = `${APP_URL}/api/og-image`;
 const BUCKET = "bench-photos";
 const PUBLIC_URL_MARKER = `/storage/v1/object/public/${BUCKET}/`;
 
@@ -63,6 +63,8 @@ function buildHtml(opts: {
   <meta property="og:title" content="${t}" />
   <meta property="og:description" content="${d}" />
   <meta property="og:image" content="${img}" />
+  <meta property="og:image:width" content="1200" />
+  <meta property="og:image:height" content="630" />
   <meta property="og:site_name" content="${escapeHtml(SITE_NAME)}" />
 
   <meta name="twitter:card" content="summary_large_image" />
@@ -167,9 +169,9 @@ Deno.serve(async (req: Request) => {
     // The photo bucket is private and signed URLs expire after minutes, so
     // og:image points at a stable app URL that signs on demand. External seed
     // photos (e.g. pexels) pass through unchanged.
-    let image = DEFAULT_OG_IMAGE;
-    if (path) image = `${APP_URL}/api/og-image?id=${encodeURIComponent(bench.id)}`;
-    else if (raw) image = raw;
+    // The card endpoint draws a 1200x630 image (photo, name, rating, and
+    // branding) for every bench, with or without a photo.
+    const image = `${APP_URL}/api/og-image?id=${encodeURIComponent(bench.id)}`;
 
     const html = buildHtml({ url: benchUrl, title, description, image });
 

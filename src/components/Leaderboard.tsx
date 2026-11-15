@@ -30,7 +30,8 @@ export function Leaderboard({ onBenchClick }: LeaderboardProps) {
   const fetchLeaderboard = async () => {
     try {
       const [benchRes, photoRes, ratingRes, profileRes] = await Promise.all([
-        supabase.from('benches').select('founding_user_id'),
+        // Real, visible benches only: seed rows and hidden test/duplicate rows don't count.
+        supabase.from('benches').select('founding_user_id').eq('is_seeded', false).or('is_hidden.is.null,is_hidden.eq.false'),
         supabase.from('bench_photos').select('user_id'),
         supabase.from('ratings').select('user_id'),
         supabase.from('profiles').select('id, username, is_founding_bencher'),
