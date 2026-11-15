@@ -2,6 +2,10 @@ import { useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { supabase } from '../lib/supabase';
+
+// Must be listed under Supabase Auth -> URL Configuration -> Redirect URLs.
+const RESET_REDIRECT_URL = 'https://www.findyourbench.app/reset-password';
 
 function openLegal(tab: 'tos' | 'privacy') {
   window.dispatchEvent(new CustomEvent('open-legal', { detail: tab }));
@@ -18,6 +22,28 @@ export default function AuthPage() {
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resetMode, setResetMode] = useState(false);
+  const [resetSent, setResetSent] = useState(false);
+
+  const handleSendReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+        redirectTo: RESET_REDIRECT_URL,
+      });
+      if (resetError) throw resetError;
+      setResetSent(true);
+    } catch (err) {
+      const status = (err as { status?: number })?.status;
+      setError(status === 429
+        ? 'Too many requests. Please wait a minute and try again.'
+        : 'Could not send the reset email. Please check the address and try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +108,7 @@ export default function AuthPage() {
         {/* Tab switcher */}
         <div className="flex border-b border-gray-100">
           <button
-            onClick={() => { setIsSignUp(false); setError(''); }}
+            onClick={() => { setIsSignUp(false); setResetMode(false); setError(''); }}
             className={`flex-1 py-3.5 text-sm font-semibold transition ${
               !isSignUp ? 'text-green-700 border-b-2 border-green-600 bg-green-50/50' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -90,7 +116,7 @@ export default function AuthPage() {
             Sign In
           </button>
           <button
-            onClick={() => { setIsSignUp(true); setError(''); }}
+            onClick={() => { setIsSignUp(true); setResetMode(false); setError(''); }}
             className={`flex-1 py-3.5 text-sm font-semibold transition ${
               isSignUp ? 'text-green-700 border-b-2 border-green-600 bg-green-50/50' : 'text-gray-500 hover:text-gray-700'
             }`}
@@ -106,6 +132,56 @@ export default function AuthPage() {
             </div>
           )}
 
+          {resetMode ? (
+            resetSent ? (
+              <div className="space-y-4 text-sm text-gray-700">
+                <p>
+                  If an account exists for <span className="font-semibold">{email.trim()}</span>, we've sent a link to
+                  reset your password. It can take a minute to arrive; check your spam folder too.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => { setResetMode(false); setResetSent(false); }}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition text-sm shadow-sm"
+                >
+                  Back to sign in
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={handleSendReset} className="space-y-4">
+                <p className="text-sm text-gray-600">Enter your account email and we'll send you a link to choose a new password.</p>
+                <div>
+                  <label htmlFor="reset-email" className="block text-xs font-semibold text-gray-600 mb-1.5 uppercase tracking-wide">
+                    Email
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="w-full px-3.5 py-3 bg-gray-50 border border-gray-200 rounded-xl text-gray-900 placeholder-gray-400 focus:outline-none focus:border-green-400 focus:bg-white transition text-base"
+                    placeholder="your@email.com"
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white font-semibold rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed text-sm shadow-sm"
+                >
+                  {loading ? 'Sending…' : 'Send reset link'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { setResetMode(false); setError(''); }}
+                  className="w-full py-2 text-sm text-gray-500 hover:text-gray-700 font-medium"
+                >
+                  Back to sign in
+                </button>
+              </form>
+            )
+          ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             {isSignUp && (
               <div>
@@ -147,6 +223,17 @@ export default function AuthPage() {
                 placeholder="••••••••"
                 required
               />
+              {!isSignUp && (
+                <div className="mt-1.5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => { setResetMode(true); setResetSent(false); setError(''); }}
+                    className="py-1 text-xs font-semibold text-green-700 hover:text-green-800"
+                  >
+                    Forgot password?
+                  </button>
+                </div>
+              )}
             </div>
 
             {isSignUp && (
@@ -186,6 +273,7 @@ export default function AuthPage() {
               {loading ? 'Loading…' : isSignUp ? 'Create Account' : 'Sign In'}
             </button>
           </form>
+          )}
         </div>
       </div>
 

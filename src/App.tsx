@@ -9,6 +9,7 @@ import AchievementNotification from './components/AchievementNotification';
 import LegalPage from './components/LegalPage';
 import AboutPage from './pages/AboutPage';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 
 interface AppContentProps {
   onReady: () => void;
@@ -47,6 +48,11 @@ function AppContent({ onReady }: AppContentProps) {
   }
 
   if (loading) return null;
+
+  // Password-recovery email link lands here (see AuthPage RESET_REDIRECT_URL).
+  if (location.pathname === '/reset-password') {
+    return <ResetPasswordPage />;
+  }
 
   if (legalTab) {
     return <LegalPage initialTab={legalTab} onClose={() => setLegalTab(null)} />;
