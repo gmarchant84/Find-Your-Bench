@@ -53,20 +53,20 @@ export default function Header({
   return (
     <header className="bg-white/95 backdrop-blur-md border-b border-gray-100 sticky top-0 z-40">
       {/* Top bar */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-5 h-16 flex items-center justify-between gap-3">
+      <div className="max-w-7xl mx-auto px-3 sm:px-5 h-16 flex items-center justify-between gap-2 xs:gap-3">
         {/* Logo + wordmark */}
         <button
           onClick={onGoHome}
-          className="flex items-center gap-3 hover:opacity-80 active:opacity-60 transition-opacity min-w-0"
+          className="flex items-center gap-2 xs:gap-3 hover:opacity-80 active:opacity-60 transition-opacity min-w-0"
         >
           <img
             src="/fyb-logo-256.png"
             alt="Find Your Bench"
             className="w-11 h-11 sm:w-13 sm:h-13 rounded-xl object-contain flex-shrink-0"
-            style={{ width: 'clamp(3.125rem, 6vw, 4.0625rem)', height: 'clamp(3.125rem, 6vw, 4.0625rem)' }}
+            style={{ width: 'clamp(2.75rem, 12vw, 4.0625rem)', height: 'clamp(2.75rem, 12vw, 4.0625rem)' }}
           />
           <div className="flex flex-col min-w-0">
-            <span className="text-[17px] sm:text-[19px] font-bold text-gray-900 leading-tight tracking-tight whitespace-nowrap">
+            <span className="text-[14px] xs:text-[17px] sm:text-[19px] font-bold text-gray-900 leading-tight tracking-tight whitespace-nowrap truncate">
               Find Your Bench
             </span>
             <span className="text-[10px] sm:text-[11px] text-gray-400 font-medium tracking-widest uppercase leading-tight mt-0.5">
@@ -76,34 +76,40 @@ export default function Header({
         </button>
 
         {/* Right actions */}
-        <div className="flex items-center gap-1.5 flex-shrink-0">
+        <div className="flex items-center gap-1 xs:gap-1.5 flex-shrink-0">
           <button
             onClick={onAddBench}
-            className="flex items-center gap-1.5 px-3 py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg transition font-semibold text-sm shadow-sm btn-press"
+            className={`flex items-center gap-1.5 ${isLoggedIn ? 'px-2.5 sm:px-3' : 'px-3'} py-2 bg-green-600 hover:bg-green-700 active:bg-green-800 text-white rounded-lg transition font-semibold text-sm shadow-sm btn-press`}
             aria-label="Add Bench"
           >
             <Plus className="w-4 h-4" />
-            {/* The single Add entry point (the floating button was removed) - always labelled */}
-            <span>Add</span>
+            {/* Signed-in phones also show streak, bell, and profile: icon-only there so the wordmark fits */}
+            <span className={isLoggedIn ? 'hidden sm:inline' : ''}>Add</span>
           </button>
           {isLoggedIn ? (
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 xs:gap-1.5">
               {streak > 0 && (
-                <div className="flex items-center gap-0.5 px-2 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-bold text-orange-600">
+                <div className="hidden sm:flex items-center gap-0.5 px-2 py-1 bg-orange-50 border border-orange-200 rounded-full text-xs font-bold text-orange-600">
                   🔥{streak}
                 </div>
               )}
               <NotificationBell />
               <button
                 onClick={onShowProfile}
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition border btn-press ${
+                className={`relative w-9 h-9 rounded-full flex items-center justify-center transition border btn-press ${
                   showProfile
                     ? 'bg-gray-900 border-gray-900 text-white'
                     : 'bg-gray-100 border-gray-200 hover:bg-gray-200 text-gray-700'
                 }`}
-                aria-label="Profile"
+                aria-label={streak > 0 ? `Profile, ${streak}-day streak` : 'Profile'}
               >
                 <User className="w-4 h-4" />
+                {/* Phones: the streak rides on the profile button so the wordmark has room */}
+                {streak > 0 && (
+                  <span className="sm:hidden absolute -bottom-1 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-full bg-orange-500 border-2 border-white text-white text-[10px] font-bold leading-[14px] text-center">
+                    {streak}
+                  </span>
+                )}
               </button>
             </div>
           ) : (
