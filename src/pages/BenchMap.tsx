@@ -619,9 +619,12 @@ export default function BenchMap() {
                 </p>
               </div>
               <BenchList
-                benches={filteredBenches.sort((a, b) => {
-                  if (a.distance && b.distance) return a.distance - b.distance;
-                  return 0;
+                benches={[...filteredBenches].sort((a, b) => {
+                  // Copy before sorting (don't mutate state during render); a
+                  // distance of 0 is valid, and unknown distances sort last.
+                  const da = a.distance ?? Number.POSITIVE_INFINITY;
+                  const db = b.distance ?? Number.POSITIVE_INFINITY;
+                  return da === db ? 0 : da < db ? -1 : 1;
                 })}
                 loading={loading}
                 onSelectBench={(bench) => navigate(`/bench/${bench.id}`)}
