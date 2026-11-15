@@ -10,6 +10,8 @@ interface HeaderProps {
   userLocation: { lat: number; lng: number } | null;
   selectedCategory: string;
   selectedLocationType: string;
+  /** False when no bench has a location_type yet: the Location chips would all return 0 results. */
+  showLocationFilter?: boolean;
   isLoggedIn: boolean;
   streak?: number;
   onViewModeChange: (mode: 'map' | 'list') => void;
@@ -33,6 +35,7 @@ export default function Header({
   userLocation,
   selectedCategory,
   selectedLocationType,
+  showLocationFilter = true,
   isLoggedIn,
   streak = 0,
   onViewModeChange,
@@ -214,6 +217,7 @@ export default function Header({
             </div>
           </div>
           {/* Location type row */}
+          {showLocationFilter && (
           <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3">
             <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-widest mb-2">Location</p>
             <div className="flex items-center gap-2 overflow-x-auto pb-0.5 scrollbar-hide">
@@ -247,6 +251,7 @@ export default function Header({
               })}
             </div>
           </div>
+          )}
           {(selectedCategory !== 'all' || selectedLocationType !== 'all') && (
             <div className="max-w-7xl mx-auto px-3 sm:px-4 pb-3 flex justify-end">
               <button

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type Bench as DbBench } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -349,6 +349,13 @@ export default function BenchMap() {
     refreshStreak();
   };
 
+  // Every bench has location_type = null today; hide the Location chips until
+  // some do, instead of offering filters that always return zero benches.
+  const hasLocationTypes = useMemo(() => benches.some((b) => !!b.location_type), [benches]);
+  useEffect(() => {
+    if (!hasLocationTypes && selectedLocationType !== 'all') setSelectedLocationType('all');
+  }, [hasLocationTypes, selectedLocationType]);
+
   const handleShowNearby = () => {
     if (userLocation) {
       // Switch to list view sorted by distance
@@ -488,6 +495,7 @@ export default function BenchMap() {
         userLocation={userLocation}
         selectedCategory={selectedCategory}
         selectedLocationType={selectedLocationType}
+        showLocationFilter={hasLocationTypes}
         isLoggedIn={!!session}
         streak={currentStreak}
         onViewModeChange={setViewMode}
