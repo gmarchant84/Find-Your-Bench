@@ -9,9 +9,8 @@ import { Leaderboard } from '../components/Leaderboard';
 import { BenchMap as BenchMapComponent } from '../components/BenchMap';
 import PlaceSearch from '../components/PlaceSearch';
 import Header from '../components/Header';
-import FloatingAddButton from '../components/FloatingAddButton';
 import AuthPromptModal from '../components/AuthPromptModal';
-import { MapPin, X, Plus, CheckCircle, AlertCircle, Navigation } from 'lucide-react';
+import { MapPin, X, Plus, CheckCircle, AlertCircle } from 'lucide-react';
 import { DistanceUnit, calculateDistance as calcDistance } from '../lib/distance';
 import { BenchOfTheDay } from '../components/BenchOfTheDay';
 
@@ -498,11 +497,6 @@ export default function BenchMap() {
         onShowAbout={() => navigate('/about')}
       />
 
-      <FloatingAddButton
-        onClick={placementMode ? handlePlacementCancel : handleOpenAddModal}
-        active={placementMode}
-      />
-
       <div className="max-w-7xl mx-auto px-4 py-4">
         {benches.length === 0 && !loading ? (
           <div className="text-center py-12">
@@ -556,24 +550,6 @@ export default function BenchMap() {
                     Learn more →
                   </button>
                 </div>
-                <div className="flex gap-2">
-                  {userLocation && (
-                    <button
-                      onClick={handleShowNearby}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition shadow-sm"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      Benches Near Me
-                    </button>
-                  )}
-                  <button
-                    onClick={handleOpenAddModal}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add a Bench
-                  </button>
-                </div>
               </div>
             )}
             </div>
@@ -605,6 +581,7 @@ export default function BenchMap() {
                 onPlacedPinChange={setPlacedPin}
                 onCameraChange={handleCameraChange}
                 benches={benches as unknown as DbBench[]}
+                userLocation={userLocation}
               />
             </div>
           </div>

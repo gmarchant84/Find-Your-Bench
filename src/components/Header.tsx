@@ -80,7 +80,8 @@ export default function Header({
             aria-label="Add Bench"
           >
             <Plus className="w-4 h-4" />
-            <span className="hidden xs:inline">Add</span>
+            {/* The single Add entry point (the floating button was removed) - always labelled */}
+            <span>Add</span>
           </button>
           {isLoggedIn ? (
             <div className="flex items-center gap-1.5">
@@ -143,15 +144,15 @@ export default function Header({
 
       {/* Toolbar */}
       <div className="max-w-7xl mx-auto px-3 sm:px-4 py-2 flex items-center gap-1.5">
-        {userLocation && (
-          <button
-            onClick={onShowNearby}
-            className="flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium border border-gray-200 transition shadow-sm btn-press"
-          >
-            <Navigation className="w-3.5 h-3.5 text-blue-500" />
-            <span>Nearby</span>
-          </button>
-        )}
+        {/* Always shown: without a location fix it asks for one (and explains a denial). */}
+        <button
+          onClick={onShowNearby}
+          className="flex-shrink-0 flex items-center gap-1.5 px-3 py-2 bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 rounded-lg text-sm font-medium border border-gray-200 transition shadow-sm btn-press"
+          aria-label={userLocation ? 'Benches near you' : 'Find benches near you'}
+        >
+          <Navigation className="w-3.5 h-3.5 text-blue-500" />
+          <span>Nearby</span>
+        </button>
         <button
           onClick={onShowPlaceSearch}
           className="flex-1 sm:flex-none flex items-center gap-1.5 px-3 py-2 bg-gray-50 hover:bg-gray-100 active:bg-gray-200 text-gray-500 rounded-lg text-sm border border-gray-200 transition btn-press"
