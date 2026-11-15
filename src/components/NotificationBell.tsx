@@ -82,15 +82,31 @@ export default function NotificationBell() {
 
   async function fetchNotifications() {
     if (!session?.user?.id) return;
-    const { data } = await supabase
+    // actor_id references auth.users, not profiles, so PostgREST can't embed
+    // profiles here (the old `profiles!bench_notifications_actor_id_fkey`
+    // embed failed with PGRST200 on every call and the bell stayed empty).
+    // Fetch usernames in a second query instead.
+    const { data, error } = await supabase
       .from('bench_notifications')
-      .select('id, bench_id, actor_id, type, read, created_at, benches(name), profiles!bench_notifications_actor_id_fkey(username)')
+      .select('id, bench_id, actor_id, type, read, created_at, benches(name)')
       .eq('user_id', session.user.id)
       .order('created_at', { ascending: false })
       .limit(30);
 
+    if (error) { console.error('Failed to load notifications:', error); return; }
     if (!data) return;
 
+    const actorIds = [...new Set(data.map(r => r.actor_id).filter(Boolean))] as string[];
+    const usernames = new Map<string, string | null>();
+    if (actorIds.length > 0) {
+      const { data: actors } = await supabase
+        .from('profiles')
+        .select('id, username')
+        .in('id', actorIds);
+      (actors ?? []).forEach(a => usernames.set(a.id, a.username ?? null));
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setNotifications(data.map((row: any) => ({
       id: row.id,
       bench_id: row.bench_id,
@@ -99,7 +115,7 @@ export default function NotificationBell() {
       read: row.read,
       created_at: row.created_at,
       bench_name: row.benches?.name ?? 'a bench',
-      actor_username: row.profiles?.username ?? 'Someone',
+      actor_username: (row.actor_id && usernames.get(row.actor_id)) || 'Someone',
     })));
   }
 

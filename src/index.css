@@ -7,6 +7,40 @@ html, body, #root {
   max-width: 100vw;
 }
 
+/* Home map height. dvh tracks iOS Safari's visible viewport (100vh is the
+   larger "toolbar hidden" viewport, which pushed the map under the toolbar);
+   the vh line is the fallback for browsers without dvh. */
+.map-frame {
+  height: 60vh;
+  height: 60dvh;
+  min-height: 280px;
+}
+/* iOS Safari zooms the page when a focused field's text is under 16px.
+   Touch devices get 16px form text; desktop keeps the compact sizes. */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+}
+
+/* Tailwind's *-screen utilities are 100vh, which on iOS Safari is taller than
+   the visible area (toolbar), so full-height sheets get cut off. */
+@supports (height: 100dvh) {
+  .min-h-screen { min-height: 100dvh; }
+  .max-h-screen { max-height: 100dvh; }
+  .h-screen { height: 100dvh; }
+}
+
+@media (min-width: 1024px) {
+  .map-frame {
+    height: calc(100vh - 160px);
+    height: calc(100dvh - 160px);
+    min-height: 480px;
+  }
+}
+
 @keyframes slide-down {
   from {
     transform: translate(-50%, -120%);

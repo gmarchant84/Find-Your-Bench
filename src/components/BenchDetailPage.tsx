@@ -1,10 +1,10 @@
 import { useEffect, useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus, Bookmark, Check, X, AlertCircle, Camera, CheckCircle2, FolderOpen, Share2, ExternalLink, LogIn } from 'lucide-react';
+import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus, Bookmark, Check, X, AlertCircle, Camera, CheckCircle2, FolderOpen, Share2, ExternalLink, LogIn, Flag } from 'lucide-react';
 import { supabase, getVibe, getLocationType } from '../lib/supabase';
+import { reportBenchMailto } from '../lib/contact';
 import type { Session } from '@supabase/supabase-js';
 import VerificationBadge from './VerificationBadge';
-import FoundingBencherBadge from './FoundingBencherBadge';
 import { useAuth } from '../context/AuthContext';
 import { AddRating } from './AddRating';
 import AdminControls from './AdminControls';
@@ -286,7 +286,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const [shareCopied, setShareCopied] = useState(false);
   const [benchLists, setBenchLists] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [founderUsername, setFounderUsername] = useState<string | null>(initialFounderUsername ?? null);
-  const [founderIsFoundingBencher, setFounderIsFoundingBencher] = useState<boolean>(initialFounderIsFoundingBencher ?? false);
+  const [, setFounderIsFoundingBencher] = useState<boolean>(initialFounderIsFoundingBencher ?? false);
   const [founderFeaturedBadge, setFounderFeaturedBadge] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 
@@ -298,11 +298,24 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const touchStartY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Per-user state: rerun when the session resolves. On a direct /bench/:id
+  // link this page renders before auth has finished loading, so with only
+  // [bench.id] a signed-in user saw "not confirmed / not visited / not saved".
+  const currentUserId = session?.user?.id ?? null;
   useEffect(() => {
-    fetchRatings();
+    if (!currentUserId) {
+      setUserConfirmations({ exists: false, removed: false });
+      setIsVisited(false);
+      setBenchLists([]);
+      return;
+    }
     fetchUserConfirmations();
     fetchVisitedStatus();
     fetchBenchLists();
+  }, [bench.id, currentUserId]);
+
+  useEffect(() => {
+    fetchRatings();
     reverseGeocode();
     fetchPrimaryPhoto();
     if (bench.founding_user_id) {
@@ -623,7 +636,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
                   </div>
                 );
               })()}
-              {bench.name !== bench.original_name && (
+              {bench.original_name && bench.original_name !== bench.name && (
                 <p className="text-gray-500 text-sm">Originally: {bench.original_name}</p>
               )}
             </div>
@@ -935,12 +948,22 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
             </div>
           </div>
         )}
+
+        {/* Report / contact: covers the bench itself, its photos and its reviews */}
+        <div className="mt-6 mb-2 text-center">
+          <a
+            href={reportBenchMailto(bench)}
+            className="inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-gray-500 hover:text-red-600 transition"
+          >
+            <Flag className="w-3.5 h-3.5" />
+            Report this bench, a photo or a review
+          </a>
+        </div>
       </div>
 
       {showAddRating && (
         <AddRating
           benchId={bench.id}
-          foundingUserId={bench.founding_user_id}
           onClose={() => setShowAddRating(false)}
           onSuccess={() => { setShowAddRating(false); fetchRatings(); refreshBench(); }}
         />

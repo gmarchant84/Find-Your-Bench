@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, type Bench as DbBench } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
@@ -9,9 +9,8 @@ import { Leaderboard } from '../components/Leaderboard';
 import { BenchMap as BenchMapComponent } from '../components/BenchMap';
 import PlaceSearch from '../components/PlaceSearch';
 import Header from '../components/Header';
-import FloatingAddButton from '../components/FloatingAddButton';
 import AuthPromptModal from '../components/AuthPromptModal';
-import { MapPin, X, Plus, CheckCircle, AlertCircle, Navigation } from 'lucide-react';
+import { MapPin, X, Plus, CheckCircle, AlertCircle } from 'lucide-react';
 import { DistanceUnit, calculateDistance as calcDistance } from '../lib/distance';
 import { BenchOfTheDay } from '../components/BenchOfTheDay';
 
@@ -29,6 +28,7 @@ interface Bench {
   average_rating?: number;
   total_ratings?: number;
   vibe_category?: string | null;
+  location_type?: string | null;
   is_hidden?: boolean;
   founder_username?: string | null;
   founder_is_founding_bencher?: boolean;
@@ -85,7 +85,13 @@ export default function BenchMap() {
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('miles');
   const [isNewUser, setIsNewUser] = useState(true);
-  const [showNearbyMessage, setShowNearbyMessage] = useState(false);
+  const [introDismissed, setIntroDismissed] = useState(() => {
+    try { return localStorage.getItem('fyb_intro_dismissed') === '1'; } catch { return false; }
+  });
+  const dismissIntro = () => {
+    setIntroDismissed(true);
+    try { localStorage.setItem('fyb_intro_dismissed', '1'); } catch { /* private mode */ }
+  };
   // mapCenter/mapZoom are used only for imperative pan commands (place search, nearby).
   // The map's own camera is the source of truth for state preservation.
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -94,6 +100,13 @@ export default function BenchMap() {
   const [placedPin, setPlacedPin] = useState<{ lat: number; lng: number } | null>(null);
   const [toast, setToast] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
   const lastBenchClickTime = useRef(0);
+  // Latest-value refs so async fetches and the realtime callback (both created
+  // once on mount) never read stale userLocation / isAdmin from the first render.
+  const userLocationRef = useRef(userLocation);
+  userLocationRef.current = userLocation;
+  const isAdminRef = useRef(isAdmin);
+  isAdminRef.current = isAdmin;
+  const userId = session?.user?.id ?? null;
 
   // Persist camera state so it survives bench-detail overlay open/close
   const savedState = useRef<SavedMapState>(
@@ -109,8 +122,6 @@ export default function BenchMap() {
   useEffect(() => {
     fetchBenches();
     getUserLocation();
-    fetchUserPreferences();
-    checkIfNewUser();
     const channel = supabase
       .channel('benches-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'benches' }, () => {
@@ -122,6 +133,18 @@ export default function BenchMap() {
       supabase.removeChannel(channel);
     };
   }, []);
+
+  // User-specific data must follow the signed-in user (sign in/out, or a
+  // session that arrives after the auth timeout), not just the first render.
+  useEffect(() => {
+    fetchUserPreferences();
+    checkIfNewUser();
+  }, [userId]);
+
+  // isAdmin resolves after the first render; refetch so admins see hidden benches.
+  useEffect(() => {
+    if (isAdmin) fetchBenches();
+  }, [isAdmin]);
 
   const fetchUserPreferences = async () => {
     if (!session?.user) return;
@@ -187,7 +210,9 @@ export default function BenchMap() {
     saveMapState(savedState.current);
   }, [benches, selectedCategory, selectedLocationType]);
 
-  const getUserLocation = () => {
+  // explicit=true when the user tapped something that needs their location,
+  // so a denial/timeout gets visible feedback instead of failing silently.
+  const getUserLocation = (explicit = false) => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -200,17 +225,25 @@ export default function BenchMap() {
         (error) => {
           console.error('Error getting location:', error);
           setLocationError('Unable to get your location');
-        }
+          if (explicit) {
+            showToast('error', error.code === error.PERMISSION_DENIED
+              ? 'Location is off. Allow location access in your browser settings to see benches near you.'
+              : 'Could not get your location. Please try again.');
+          }
+        },
+        // Without a timeout the callback may never fire on iOS while a fix is pending.
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
       );
     } else {
       setLocationError('Geolocation not supported');
+      if (explicit) showToast('error', 'Location is not supported on this device.');
     }
   };
 
   const calculateDistances = () => {
     if (!userLocation) return;
 
-    const benchesWithDistance = benches.map((bench) => ({
+    setBenches(prev => prev.map((bench) => ({
       ...bench,
       distance: calcDistance(
         userLocation.lat,
@@ -218,9 +251,7 @@ export default function BenchMap() {
         Number(bench.latitude),
         Number(bench.longitude)
       ),
-    }));
-
-    setBenches(benchesWithDistance);
+    })));
   };
 
   const fetchBenches = async () => {
@@ -236,13 +267,18 @@ export default function BenchMap() {
     }
 
     if (data) {
-      const benchData = (data as Bench[]).filter(b => isAdmin || !b.is_hidden);
-      const withDistance = (list: Bench[]) => userLocation
-        ? list.map(bench => ({
-            ...bench,
-            distance: calcDistance(userLocation.lat, userLocation.lng, Number(bench.latitude), Number(bench.longitude)),
-          }))
-        : list;
+      const benchData = (data as Bench[]).filter(b => isAdminRef.current || !b.is_hidden);
+      // Read the location at the moment each result lands (not when this
+      // function was created) so a GPS fix that arrived mid-fetch isn't wiped.
+      const withDistance = (list: Bench[]) => {
+        const loc = userLocationRef.current;
+        return loc
+          ? list.map(bench => ({
+              ...bench,
+              distance: calcDistance(loc.lat, loc.lng, Number(bench.latitude), Number(bench.longitude)),
+            }))
+          : list;
+      };
 
       // Put benches on screen right away - founder enrichment follows and
       // re-renders once it lands. Keeps the map from waiting on extra queries.
@@ -294,7 +330,7 @@ export default function BenchMap() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleBenchCreated = async (benchId: string) => {
+  const handleBenchCreated = async () => {
     // The new AddBenchModal handles all insertion itself — we just clean up UI and refresh
     setShowAddModal(false);
     setAddBenchLocation(null);
@@ -313,6 +349,13 @@ export default function BenchMap() {
     refreshStreak();
   };
 
+  // Every bench has location_type = null today; hide the Location chips until
+  // some do, instead of offering filters that always return zero benches.
+  const hasLocationTypes = useMemo(() => benches.some((b) => !!b.location_type), [benches]);
+  useEffect(() => {
+    if (!hasLocationTypes && selectedLocationType !== 'all') setSelectedLocationType('all');
+  }, [hasLocationTypes, selectedLocationType]);
+
   const handleShowNearby = () => {
     if (userLocation) {
       // Switch to list view sorted by distance
@@ -321,7 +364,7 @@ export default function BenchMap() {
       setMapZoom(15);
     } else {
       // Request location, then switch to list once we have it
-      getUserLocation();
+      getUserLocation(true);
       setViewMode('list');
     }
   };
@@ -452,6 +495,7 @@ export default function BenchMap() {
         userLocation={userLocation}
         selectedCategory={selectedCategory}
         selectedLocationType={selectedLocationType}
+        showLocationFilter={hasLocationTypes}
         isLoggedIn={!!session}
         streak={currentStreak}
         onViewModeChange={setViewMode}
@@ -465,11 +509,6 @@ export default function BenchMap() {
         onLocationTypeChange={setSelectedLocationType}
         onGoHome={handleGoHome}
         onShowAbout={() => navigate('/about')}
-      />
-
-      <FloatingAddButton
-        onClick={placementMode ? handlePlacementCancel : handleOpenAddModal}
-        active={placementMode}
       />
 
       <div className="max-w-7xl mx-auto px-4 py-4">
@@ -498,56 +537,38 @@ export default function BenchMap() {
         )}
 
         {viewMode === 'map' ? (
-          <div className="space-y-4 lg:grid lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-4 lg:space-y-0 lg:items-start">
-            {/* Sidebar column (desktop) / stacked above map (mobile) */}
-            <div className="space-y-4 lg:col-start-2 lg:row-start-1">
-            {showNearbyMessage && (
-              <div className="bg-green-50 border-2 border-green-300 rounded-xl p-4 text-center animate-pulse">
-                <p className="text-green-900 font-semibold">Showing benches near you</p>
-              </div>
-            )}
-            {(
+          <div className="grid grid-cols-1 gap-3 lg:grid-cols-[minmax(0,1fr)_360px] lg:grid-rows-[auto_1fr] lg:gap-4 lg:items-start">
+            {/* Mobile: compact Bench of the Day, then the map, then the intro line.
+                Desktop: map on the left, the rest in the right column. */}
+            <div className="empty:hidden lg:col-start-2 lg:row-start-1">
               <BenchOfTheDay
-                userLocation={userLocation ? { latitude: userLocation.lat, longitude: userLocation.lng } : null}
+                latitude={userLocation?.lat ?? null}
+                longitude={userLocation?.lng ?? null}
                 onBenchClick={(benchId) => {
                   navigate(`/bench/${benchId}`);
                 }}
               />
-            )}
-            {isNewUser && (
-              <div className="bg-white border-2 border-green-100 rounded-xl p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold text-gray-900 text-sm">New to Find Your Bench?</h3>
-                  <button
-                    onClick={() => navigate('/about')}
-                    className="text-xs text-green-600 font-semibold hover:text-green-700 transition"
-                  >
-                    Learn more →
-                  </button>
-                </div>
-                <div className="flex gap-2">
-                  {userLocation && (
-                    <button
-                      onClick={handleShowNearby}
-                      className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl font-semibold text-sm transition shadow-sm"
-                    >
-                      <Navigation className="w-4 h-4" />
-                      Benches Near Me
-                    </button>
-                  )}
-                  <button
-                    onClick={handleOpenAddModal}
-                    className="flex-1 flex items-center justify-center gap-2 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-semibold text-sm transition"
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add a Bench
-                  </button>
-                </div>
+            </div>
+            {isNewUser && !introDismissed && (
+              <div className="row-start-3 lg:col-start-2 lg:row-start-2 bg-white border border-green-100 rounded-xl pl-4 pr-1 py-1 flex items-center gap-2">
+                <p className="flex-1 min-w-0 text-sm text-gray-700 truncate">New to Find Your Bench?</p>
+                <button
+                  onClick={() => navigate('/about')}
+                  className="flex-shrink-0 px-2 py-2 text-sm text-green-700 font-semibold hover:text-green-800 transition"
+                >
+                  Learn more
+                </button>
+                <button
+                  onClick={dismissIntro}
+                  className="flex-shrink-0 w-10 h-10 flex items-center justify-center text-gray-400 hover:text-gray-600 rounded-lg"
+                  aria-label="Dismiss"
+                >
+                  <X className="w-4 h-4" />
+                </button>
               </div>
             )}
-            </div>
-            {/* Map is always mounted so camera state is never lost when opening a bench */}
-            <div className={`relative ${isNewUser || showNearbyMessage ? 'h-[calc(100vh-460px)]' : 'h-[calc(100vh-360px)]'} min-h-[300px] lg:col-start-1 lg:row-start-1 lg:h-[calc(100vh-160px)] lg:min-h-[480px] rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg`}>
+            {/* Map: 60% of the dynamic viewport on mobile so it is on the first screen */}
+            <div className="map-frame relative lg:col-start-1 lg:row-start-1 lg:row-span-2 rounded-2xl overflow-hidden border-2 border-green-100 shadow-lg">
               {loading && benches.length === 0 && (
                 <div className="absolute inset-0 z-10 flex items-end justify-center pb-5 pointer-events-none">
                   <div className="bg-white/95 shadow-md rounded-full px-4 py-1.5 text-sm font-semibold text-green-700 border border-green-100 animate-pulse">
@@ -574,6 +595,7 @@ export default function BenchMap() {
                 onPlacedPinChange={setPlacedPin}
                 onCameraChange={handleCameraChange}
                 benches={benches as unknown as DbBench[]}
+                userLocation={userLocation}
               />
             </div>
           </div>
@@ -598,9 +620,12 @@ export default function BenchMap() {
                 </p>
               </div>
               <BenchList
-                benches={filteredBenches.sort((a, b) => {
-                  if (a.distance && b.distance) return a.distance - b.distance;
-                  return 0;
+                benches={[...filteredBenches].sort((a, b) => {
+                  // Copy before sorting (don't mutate state during render); a
+                  // distance of 0 is valid, and unknown distances sort last.
+                  const da = a.distance ?? Number.POSITIVE_INFINITY;
+                  const db = b.distance ?? Number.POSITIVE_INFINITY;
+                  return da === db ? 0 : da < db ? -1 : 1;
                 })}
                 loading={loading}
                 onSelectBench={(bench) => navigate(`/bench/${bench.id}`)}

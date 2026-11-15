@@ -1,12 +1,10 @@
 import { useEffect, useState, useRef, useCallback, Component, ReactNode } from 'react';
 import { APIProvider, Map as GoogleMap, AdvancedMarker, useMap, InfoWindow } from '@vis.gl/react-google-maps';
-import { MapPin, Navigation, Star, X, ArrowRight, Map as MapIcon } from 'lucide-react';
+import { MapPin, Navigation, Star, ArrowRight, Map as MapIcon } from 'lucide-react';
 import { supabase, Bench, getVibe } from '../lib/supabase';
 import { MarkerClusterer } from '@googlemaps/markerclusterer';
-import { calculateDistance, formatDistance, DistanceUnit } from '../lib/distance';
+import { formatDistance, DistanceUnit } from '../lib/distance';
 import { SignedPhotoImg } from '../lib/photos';
-
-const NEARBY_RADIUS_METERS = 2000;
 
 interface BenchMapProps {
   onBenchClick: (bench: Bench) => void;
@@ -24,6 +22,8 @@ interface BenchMapProps {
   onCameraChange?: (center: { lat: number; lng: number }, zoom: number) => void;
   /** Benches already loaded by the parent page. When provided the map skips its own fetch. */
   benches?: Bench[];
+  /** User's position (owned by the page) - drawn as the blue dot. */
+  userLocation?: { lat: number; lng: number } | null;
 }
 
 interface BenchWithDistance extends Bench {
@@ -36,7 +36,6 @@ function MarkerWithRef({
   bench,
   isSelected,
   isSaved,
-  isNearby,
   showPhoto,
   onClick,
   onRef,
@@ -44,7 +43,6 @@ function MarkerWithRef({
   bench: BenchWithDistance;
   isSelected: boolean;
   isSaved: boolean;
-  isNearby: boolean;
   showPhoto: boolean;
   onClick: () => void;
   onRef: (marker: google.maps.marker.AdvancedMarkerElement | null) => void;
@@ -52,15 +50,13 @@ function MarkerWithRef({
   const vibe = getVibe(bench.vibe_category);
   const scale = isSelected ? 'scale-125' : 'scale-100';
 
-  // Border: selected > saved > vibe color > nearby > default white
+  // Border: selected > saved > vibe color > default white
   const borderStyle: React.CSSProperties = isSelected
     ? { borderColor: '#22c55e' }
     : isSaved
     ? { borderColor: '#f59e0b' }
     : vibe
     ? { borderColor: vibe.hex }
-    : isNearby
-    ? { borderColor: '#60a5fa' }
     : { borderColor: '#ffffff' };
 
   // No-photo marker background: use vibe gradient or default green
@@ -118,28 +114,21 @@ function MapContent({
   initialZoom,
   distanceUnit = 'miles',
   placementMode = false,
-  onPlacementConfirm,
   onPlacementCancel,
   onPlacedPinChange,
   onCameraChange,
   benches: benchesProp,
+  userLocation = null,
 }: BenchMapProps) {
   const map = useMap();
   const [benches, setBenches] = useState<BenchWithDistance[]>([]);
   const [popupBench, setPopupBench] = useState<BenchWithDistance | null>(null);
   const [tempPin, setTempPin] = useState<{ lat: number; lng: number } | null>(null);
-  const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [nearbyBenchIds, setNearbyBenchIds] = useState<string[]>([]);
-  const [showNearbyOnly, setShowNearbyOnly] = useState(false);
-  const [nearbyLoading, setNearbyLoading] = useState(false);
-  const [locationError, setLocationError] = useState<string | null>(null);
   const [savedBenchIds, setSavedBenchIds] = useState<string[]>([]);
   // Placement mode: position of the preview pin (follows mouse on desktop)
   const [previewPin, setPreviewPin] = useState<{ lat: number; lng: number } | null>(null);
   const [placedPin, setPlacedPin] = useState<{ lat: number; lng: number } | null>(null);
 
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const longPressPosition = useRef<{ lat: number; lng: number } | null>(null);
   const markerClickedRef = useRef(false);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markerRefs = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
@@ -246,7 +235,7 @@ function MapContent({
     const markers = Array.from(markerRefs.current.values());
     clustererRef.current.clearMarkers();
     clustererRef.current.addMarkers(markers);
-  }, [map, benches, showNearbyOnly]);
+  }, [map, benches]);
 
   // Apply/remove crosshair cursor on the map element when in placement mode
   useEffect(() => {
@@ -276,36 +265,6 @@ function MapContent({
       .select('bench_id')
       .eq('user_id', user.id);
     if (data) setSavedBenchIds(data.map((s) => s.bench_id));
-  };
-
-  const findNearbyBenches = () => {
-    if (!navigator.geolocation) {
-      setLocationError('Geolocation is not supported by your browser');
-      return;
-    }
-    setLocationError(null);
-    setNearbyLoading(true);
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const userPos = { lat: position.coords.latitude, lng: position.coords.longitude };
-        setUserLocation(userPos);
-        const benchesWithDistance = benches.map((bench) => ({
-          ...bench,
-          distance: calculateDistance(userPos.lat, userPos.lng, Number(bench.latitude), Number(bench.longitude)),
-        }));
-        const nearby = benchesWithDistance.filter((b) => (b.distance ?? Infinity) <= NEARBY_RADIUS_METERS).map((b) => b.id);
-        setNearbyBenchIds(nearby);
-        setBenches(benchesWithDistance);
-        setShowNearbyOnly(true);
-        setNearbyLoading(false);
-        if (map) { map.panTo(userPos); map.setZoom(15); }
-      },
-      (err) => {
-        console.error('Error getting location:', err);
-        setNearbyLoading(false);
-        setLocationError('Unable to get your location. Please enable location services.');
-      }
-    );
   };
 
   // ── Placement mode handlers ──────────────────────────────────────────────
@@ -346,18 +305,6 @@ function MapContent({
     }
   }, [onMapLongPress]);
 
-  // Desktop mouse-down (non-touch) for right-click fallback — handled via onContextmenu
-  const handleMouseDown = useCallback((_e: any) => {
-    // no-op: placement is handled via the floating button + click
-  }, []);
-
-  const clearLongPress = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
-
   const handleMarkerRef = useCallback(
     (benchId: string) => (marker: google.maps.marker.AdvancedMarkerElement | null) => {
       if (marker) { markerRefs.current.set(benchId, marker); }
@@ -366,9 +313,7 @@ function MapContent({
     []
   );
 
-  const benchesToShow = showNearbyOnly
-    ? benches.filter((b) => nearbyBenchIds.includes(b.id))
-    : benches;
+  const benchesToShow = benches;
 
   const activePin = placedPin ?? previewPin;
 
@@ -379,8 +324,6 @@ function MapContent({
         defaultZoom={initialZoom ?? 13}
         mapId="find-your-bench-map"
         onMousemove={handleMapMouseMove}
-        onMousedown={handleMouseDown}
-        onMouseup={clearLongPress}
         onClick={handleMapClick}
         onContextmenu={handleRightClick}
         className="w-full h-full"
@@ -432,7 +375,6 @@ function MapContent({
             bench={bench}
             isSelected={selectedBench?.id === bench.id || popupBench?.id === bench.id}
             isSaved={savedBenchIds.includes(bench.id)}
-            isNearby={nearbyBenchIds.includes(bench.id)}
             showPhoto={photoBenchIds.has(bench.id) || selectedBench?.id === bench.id || popupBench?.id === bench.id}
             onClick={() => {
               markerClickedRef.current = true;
@@ -509,38 +451,6 @@ function MapContent({
         )}
       </GoogleMap>
 
-      {/* Right-click hint — desktop only, shown briefly on first hover if not in placement mode */}
-      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2">
-        <button
-          onClick={findNearbyBenches}
-          disabled={nearbyLoading}
-          className="px-4 py-3 bg-white hover:bg-gray-50 text-gray-900 font-semibold rounded-xl shadow-lg flex items-center gap-2 transition-colors border border-gray-200 disabled:opacity-60 btn-press"
-        >
-          <Navigation size={18} className={nearbyLoading ? 'text-gray-400 animate-spin' : 'text-blue-500'} />
-          {nearbyLoading ? 'Finding...' : 'Nearby Benches'}
-        </button>
-
-        {showNearbyOnly && (
-          <div className="flex flex-col gap-1">
-            <div className="px-3 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg shadow text-center">
-              Showing {nearbyBenchIds.length} bench{nearbyBenchIds.length !== 1 ? 'es' : ''} near you
-            </div>
-            <button
-              onClick={() => { setShowNearbyOnly(false); setNearbyBenchIds([]); }}
-              className="px-3 py-2 bg-gray-700 hover:bg-gray-800 text-white text-xs font-medium rounded-lg shadow transition-colors flex items-center justify-center gap-1"
-            >
-              <X className="w-3 h-3" />
-              Show all benches
-            </button>
-          </div>
-        )}
-
-        {locationError && (
-          <div className="px-3 py-2 bg-red-600 text-white text-xs font-semibold rounded-lg shadow text-center">
-            {locationError}
-          </div>
-        )}
-      </div>
     </>
   );
 }

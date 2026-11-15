@@ -3,7 +3,6 @@ export type DistanceUnit = 'miles' | 'km';
 const METERS_TO_MILES = 0.000621371;
 const METERS_TO_KM = 0.001;
 const FEET_PER_MILE = 5280;
-const METERS_PER_MILE = 1609.34;
 
 export function formatDistance(meters: number, unit: DistanceUnit): string {
   if (unit === 'miles') {

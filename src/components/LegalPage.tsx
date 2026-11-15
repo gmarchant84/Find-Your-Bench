@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
+import { CONTACT_EMAIL } from '../lib/contact';
 
 interface LegalPageProps {
   initialTab?: 'tos' | 'privacy';
@@ -156,8 +157,9 @@ function TermsOfService() {
 
       <Section title="9. Contact">
         <p>
-          Questions about these Terms? Reach us at the email associated with findyourbench.app. We're
-          a small project and will do our best to respond.
+          Questions about these Terms? Email us at{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-green-700 underline underline-offset-2">{CONTACT_EMAIL}</a>.
+          We're a small project and will do our best to respond.
         </p>
       </Section>
     </div>
@@ -273,7 +275,8 @@ function PrivacyPolicy() {
 
       <Section title="12. Contact">
         <p>
-          Privacy questions or data requests? Reach us at the email associated with findyourbench.app.
+          Privacy questions or data requests (including deleting your data)? Email us at{' '}
+          <a href={`mailto:${CONTACT_EMAIL}`} className="text-green-700 underline underline-offset-2">{CONTACT_EMAIL}</a>.
         </p>
       </Section>
     </div>

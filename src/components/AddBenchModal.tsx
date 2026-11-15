@@ -5,7 +5,6 @@ import {
 } from 'lucide-react';
 import { supabase, BENCH_VIBES, VibeCategory, friendlyError } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { handleBenchAdded, handleRatingGiven } from '../lib/gamification';
 import { useAchievements } from '../hooks/useAchievements';
 import { uploadPhotoWithThumb } from '../lib/photos';
 
@@ -329,23 +328,18 @@ export default function AddBenchModal({
     }
 
     // Insert initial rating
-    const { data: ratingData, error: ratingError } = await supabase
+    await supabase
       .from('ratings')
       .insert({
         bench_id: benchData.id,
         user_id: userId,
         overall: overallRating,
         review_text: reviewText.trim() || null,
-      })
-      .select('id')
-      .single();
+      });
 
-    if (!ratingError && ratingData) {
-      await handleRatingGiven(userId, ratingData.id);
-    }
-
-    // Award gamification points
-    await handleBenchAdded(userId, benchData.id);
+    // Points and user_stats counters are awarded server-side by
+    // trigger_update_user_stats_on_bench / _on_rating (clients can no longer
+    // write user_stats or point_transactions). Achievements are checked here.
     await triggerAchievementCheck();
 
     // Fetch stats for success screen
