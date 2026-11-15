@@ -33,7 +33,7 @@ export default function AuthPromptModal({ onSignUp, onLogIn, onClose, action }: 
           </button>
           <div className="flex items-center gap-3 mb-1">
             <img
-              src="/fyb-logo.png"
+              src="/fyb-logo-256.png"
               alt="Find Your Bench"
               className="w-10 h-10 rounded-xl object-contain"
             />

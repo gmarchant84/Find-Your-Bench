@@ -65,7 +65,7 @@ export default function AuthPage() {
       {/* Brand lockup */}
       <div className="flex flex-col items-center mb-8 select-none">
         <img
-          src="/ChatGPT_Image_May_26,_2026,_09_16_01_PM.png"
+          src="/fyb-logo-256.png"
           alt="Find Your Bench"
           className="w-24 h-24 sm:w-28 sm:h-28 object-contain mb-4 drop-shadow-sm"
         />

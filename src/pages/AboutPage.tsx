@@ -40,7 +40,7 @@ export default function AboutPage() {
 
         {/* Hero */}
         <div className="text-center mb-10">
-          <img src="/fyb-logo.png" alt="Find Your Bench" className="w-20 h-20 rounded-2xl mx-auto mb-4 object-contain shadow-sm" />
+          <img src="/fyb-logo-256.png" alt="Find Your Bench" className="w-20 h-20 rounded-2xl mx-auto mb-4 object-contain shadow-sm" />
           <h2 className="text-3xl font-bold text-gray-900 mb-2">Find Your Bench</h2>
           <p className="text-green-700 font-semibold tracking-widest uppercase text-xs mb-4">Get Outside. Stay Outside.</p>
           <p className="text-gray-600 text-base leading-relaxed max-w-md mx-auto">
