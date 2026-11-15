@@ -205,7 +205,9 @@ export default function BenchMap() {
     saveMapState(savedState.current);
   }, [benches, selectedCategory, selectedLocationType]);
 
-  const getUserLocation = () => {
+  // explicit=true when the user tapped something that needs their location,
+  // so a denial/timeout gets visible feedback instead of failing silently.
+  const getUserLocation = (explicit = false) => {
     if ('geolocation' in navigator) {
       navigator.geolocation.getCurrentPosition(
         (position) => {
@@ -218,10 +220,18 @@ export default function BenchMap() {
         (error) => {
           console.error('Error getting location:', error);
           setLocationError('Unable to get your location');
-        }
+          if (explicit) {
+            showToast('error', error.code === error.PERMISSION_DENIED
+              ? 'Location is off. Allow location access in your browser settings to see benches near you.'
+              : 'Could not get your location. Please try again.');
+          }
+        },
+        // Without a timeout the callback may never fire on iOS while a fix is pending.
+        { enableHighAccuracy: false, timeout: 15000, maximumAge: 60000 }
       );
     } else {
       setLocationError('Geolocation not supported');
+      if (explicit) showToast('error', 'Location is not supported on this device.');
     }
   };
 
@@ -342,7 +352,7 @@ export default function BenchMap() {
       setMapZoom(15);
     } else {
       // Request location, then switch to list once we have it
-      getUserLocation();
+      getUserLocation(true);
       setViewMode('list');
     }
   };
