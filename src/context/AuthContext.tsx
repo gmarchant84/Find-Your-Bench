@@ -13,6 +13,8 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
+const AUTH_INIT_TIMEOUT_MS = 4000;
+
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -42,11 +44,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) fetchAdminStatus(session.user.id);
-      setLoading(false);
-    });
+    // getSession() can block on a network token refresh when the stored access
+    // token has expired (e.g. app reopened after >1h). On a slow or hung
+    // connection that promise can take 30-50s or never settle, and the splash
+    // only hides once loading=false. Never let auth hold the UI hostage:
+    // render as signed-out after a short grace period; onAuthStateChange will
+    // update the session when the refresh eventually completes.
+    const authTimeout = setTimeout(() => setLoading(false), AUTH_INIT_TIMEOUT_MS);
+
+    supabase.auth.getSession()
+      .then(({ data: { session } }) => {
+        setSession(session);
+        if (session?.user) fetchAdminStatus(session.user.id);
+      })
+      .catch((err) => {
+        console.error('[auth] getSession failed', err);
+      })
+      .finally(() => {
+        clearTimeout(authTimeout);
+        setLoading(false);
+      });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       (() => {
@@ -61,7 +78,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       })();
     });
 
-    return () => subscription?.unsubscribe();
+    return () => {
+      clearTimeout(authTimeout);
+      subscription?.unsubscribe();
+    };
   }, []);
 
   const signUp = async (email: string, password: string, username: string) => {
