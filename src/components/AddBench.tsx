@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import { X, Camera, Upload, MapPin, Tag, Navigation, AlertCircle, Loader2 } from 'lucide-react';
+import { X, Camera, Upload, Tag, Navigation, AlertCircle, Loader2 } from 'lucide-react';
 import { supabase, friendlyError, LOCATION_TYPES, LocationType } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import { useAchievements } from '../hooks/useAchievements';

@@ -4,7 +4,6 @@ import { ArrowLeft, Star, MapPin, User, ThumbsUp, ThumbsDown, MessageSquarePlus,
 import { supabase, getVibe, getLocationType } from '../lib/supabase';
 import type { Session } from '@supabase/supabase-js';
 import VerificationBadge from './VerificationBadge';
-import FoundingBencherBadge from './FoundingBencherBadge';
 import { useAuth } from '../context/AuthContext';
 import { AddRating } from './AddRating';
 import AdminControls from './AdminControls';
@@ -286,7 +285,7 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const [shareCopied, setShareCopied] = useState(false);
   const [benchLists, setBenchLists] = useState<{ id: string; name: string; emoji: string }[]>([]);
   const [founderUsername, setFounderUsername] = useState<string | null>(initialFounderUsername ?? null);
-  const [founderIsFoundingBencher, setFounderIsFoundingBencher] = useState<boolean>(initialFounderIsFoundingBencher ?? false);
+  const [, setFounderIsFoundingBencher] = useState<boolean>(initialFounderIsFoundingBencher ?? false);
   const [founderFeaturedBadge, setFounderFeaturedBadge] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
 

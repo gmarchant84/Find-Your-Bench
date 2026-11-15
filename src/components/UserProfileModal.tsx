@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
-import { X, MapPin, Star, Bookmark, Check, Plus, FolderOpen, Award, LogOut, Edit2, Camera, Lock, Mail, Trash2, ChevronRight } from 'lucide-react';
+import { X, MapPin, Star, Bookmark, Check, Plus, FolderOpen, Award, LogOut, Edit2, Camera, Lock, Mail, Trash2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
 import CreateListModal from './CreateListModal';
@@ -7,7 +7,7 @@ import ListDetailPage from './ListDetailPage';
 import BadgeDisplay from './BadgeDisplay';
 import FoundingBencherBadge from './FoundingBencherBadge';
 import { getUserAchievements, getAllAchievements, Achievement, UserAchievement } from '../lib/achievements';
-import { SignedPhotoImg, useSignedPhotoUrl, uploadPhotoWithThumb } from '../lib/photos';
+import { SignedPhotoImg, uploadPhotoWithThumb } from '../lib/photos';
 
 interface Bench {
   id: string;

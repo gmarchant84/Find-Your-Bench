@@ -118,7 +118,6 @@ function MapContent({
   initialZoom,
   distanceUnit = 'miles',
   placementMode = false,
-  onPlacementConfirm,
   onPlacementCancel,
   onPlacedPinChange,
   onCameraChange,
@@ -138,8 +137,6 @@ function MapContent({
   const [previewPin, setPreviewPin] = useState<{ lat: number; lng: number } | null>(null);
   const [placedPin, setPlacedPin] = useState<{ lat: number; lng: number } | null>(null);
 
-  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
-  const longPressPosition = useRef<{ lat: number; lng: number } | null>(null);
   const markerClickedRef = useRef(false);
   const clustererRef = useRef<MarkerClusterer | null>(null);
   const markerRefs = useRef<Map<string, google.maps.marker.AdvancedMarkerElement>>(new Map());
@@ -346,18 +343,6 @@ function MapContent({
     }
   }, [onMapLongPress]);
 
-  // Desktop mouse-down (non-touch) for right-click fallback — handled via onContextmenu
-  const handleMouseDown = useCallback((_e: any) => {
-    // no-op: placement is handled via the floating button + click
-  }, []);
-
-  const clearLongPress = useCallback(() => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current);
-      longPressTimer.current = null;
-    }
-  }, []);
-
   const handleMarkerRef = useCallback(
     (benchId: string) => (marker: google.maps.marker.AdvancedMarkerElement | null) => {
       if (marker) { markerRefs.current.set(benchId, marker); }
@@ -379,8 +364,6 @@ function MapContent({
         defaultZoom={initialZoom ?? 13}
         mapId="find-your-bench-map"
         onMousemove={handleMapMouseMove}
-        onMousedown={handleMouseDown}
-        onMouseup={clearLongPress}
         onClick={handleMapClick}
         onContextmenu={handleRightClick}
         className="w-full h-full"

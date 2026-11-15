@@ -86,7 +86,7 @@ export default function BenchMap() {
   const [searchCenter, setSearchCenter] = useState<{ lat: number; lng: number } | null>(null);
   const [distanceUnit, setDistanceUnit] = useState<DistanceUnit>('miles');
   const [isNewUser, setIsNewUser] = useState(true);
-  const [showNearbyMessage, setShowNearbyMessage] = useState(false);
+  const [showNearbyMessage] = useState(false);
   // mapCenter/mapZoom are used only for imperative pan commands (place search, nearby).
   // The map's own camera is the source of truth for state preservation.
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number } | null>(null);
@@ -315,7 +315,7 @@ export default function BenchMap() {
     setTimeout(() => setToast(null), 4000);
   };
 
-  const handleBenchCreated = async (benchId: string) => {
+  const handleBenchCreated = async () => {
     // The new AddBenchModal handles all insertion itself — we just clean up UI and refresh
     setShowAddModal(false);
     setAddBenchLocation(null);
