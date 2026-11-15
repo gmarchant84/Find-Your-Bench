@@ -11,6 +11,26 @@ const corsHeaders = {
 // the same value as a header on the auth.users INSERT webhook.
 const WEBHOOK_SECRET = Deno.env.get("WEBHOOK_SECRET") ?? "";
 
+// Constant-time string comparison (avoids leaking the secret via timing).
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  let diff = ab.length ^ bb.length;
+  const len = Math.max(ab.length, bb.length);
+  for (let i = 0; i < len; i++) diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  return diff === 0;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
 function buildEmailHtml(username: string): string {
   const html = `<!DOCTYPE html>
 <html lang="en">
@@ -116,7 +136,7 @@ function buildEmailHtml(username: string): string {
   </table>
 </body>
 </html>`;
-  return html.replace("[username]", username);
+  return html.replace("[username]", () => escapeHtml(username));
 }
 
 async function fetchUsername(
@@ -154,8 +174,17 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const webhookSecret = req.headers.get("x-webhook-secret");
-    if (webhookSecret !== WEBHOOK_SECRET) {
+    // Fail closed: an unset WEBHOOK_SECRET must never mean "no auth".
+    if (!WEBHOOK_SECRET) {
+      console.error("send-welcome-email: WEBHOOK_SECRET is not configured");
+      return new Response(
+        JSON.stringify({ error: "Not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const webhookSecret = req.headers.get("x-webhook-secret") ?? "";
+    if (!safeEqual(webhookSecret, WEBHOOK_SECRET)) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }

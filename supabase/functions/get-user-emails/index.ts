@@ -8,14 +8,32 @@ const corsHeaders = {
 
 const ADMIN_SECRET = Deno.env.get("ADMIN_SECRET") ?? "";
 
+function safeEqual(a: string, b: string): boolean {
+  const enc = new TextEncoder();
+  const ab = enc.encode(a);
+  const bb = enc.encode(b);
+  let diff = ab.length ^ bb.length;
+  const len = Math.max(ab.length, bb.length);
+  for (let i = 0; i < len; i++) diff |= (ab[i] ?? 0) ^ (bb[i] ?? 0);
+  return diff === 0;
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
   }
 
   try {
-    const adminSecret = req.headers.get("x-admin-secret");
-    if (adminSecret !== ADMIN_SECRET) {
+    // Fail closed: an unset ADMIN_SECRET must never mean "no auth".
+    if (!ADMIN_SECRET) {
+      return new Response(
+        JSON.stringify({ error: "Not configured" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const adminSecret = req.headers.get("x-admin-secret") ?? "";
+    if (!safeEqual(adminSecret, ADMIN_SECRET)) {
       return new Response(
         JSON.stringify({ error: "Unauthorized" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }

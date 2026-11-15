@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react';
 import { X, MapPin, Star, Bookmark, Check, Plus, FolderOpen, Award, LogOut, Edit2, Camera, Lock, Mail, Trash2, ChevronRight } from 'lucide-react';
 import { supabase } from '../lib/supabase';
-import { useAuth } from '../context/AuthContext';
+import { useAuth, validateUsername } from '../context/AuthContext';
 import CreateListModal from './CreateListModal';
 import ListDetailPage from './ListDetailPage';
 import BadgeDisplay from './BadgeDisplay';
@@ -166,6 +166,12 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
     setEditError('');
     setEditSuccess('');
     try {
+      const newUsername = editUsername.trim();
+      if (newUsername && newUsername !== (profile.username ?? '')) {
+        const usernameError = validateUsername(newUsername);
+        if (usernameError) throw new Error(usernameError);
+      }
+
       let avatarUrl = editAvatarUrl;
 
       // Upload avatar if a new file was selected
@@ -249,17 +255,16 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
 
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== 'DELETE') return;
-    try {
-      // Delete profile and auth user via RPC or cascade
-      await supabase.from('profiles').delete().eq('id', session!.user!.id);
-      await supabase.auth.admin?.deleteUser?.(session!.user!.id).catch(() => {});
-      await signOut();
-      onClose();
-    } catch {
-      // If RPC not available, sign out and show instructions
-      await signOut();
-      onClose();
+    setEditError('');
+    // delete_own_account() (SECURITY DEFINER) deletes auth.users for auth.uid();
+    // profile, ratings, lists etc. cascade. Benches/photos stay, unattributed.
+    const { error } = await supabase.rpc('delete_own_account');
+    if (error) {
+      setEditError(error.message || 'Could not delete your account. Please contact support.');
+      return;
     }
+    await signOut().catch(() => {});
+    onClose();
   };
 
   const handleRemoveSaved = async (benchId: string) => {
@@ -706,6 +711,7 @@ export default function UserProfileModal({ onClose, onBenchClick }: UserProfileM
                 </button>
               ) : (
                 <div className="space-y-2">
+                  {editError && <p className="text-xs text-red-700">{editError}</p>}
                   <p className="text-xs font-semibold text-red-700">Type DELETE to confirm:</p>
                   <input
                     type="text"
