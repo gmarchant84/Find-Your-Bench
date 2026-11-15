@@ -298,11 +298,24 @@ export default function BenchDetail({ bench: initialBench, onBack, backButtonTex
   const touchStartY = useRef<number | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Per-user state: rerun when the session resolves. On a direct /bench/:id
+  // link this page renders before auth has finished loading, so with only
+  // [bench.id] a signed-in user saw "not confirmed / not visited / not saved".
+  const currentUserId = session?.user?.id ?? null;
   useEffect(() => {
-    fetchRatings();
+    if (!currentUserId) {
+      setUserConfirmations({ exists: false, removed: false });
+      setIsVisited(false);
+      setBenchLists([]);
+      return;
+    }
     fetchUserConfirmations();
     fetchVisitedStatus();
     fetchBenchLists();
+  }, [bench.id, currentUserId]);
+
+  useEffect(() => {
+    fetchRatings();
     reverseGeocode();
     fetchPrimaryPhoto();
     if (bench.founding_user_id) {
